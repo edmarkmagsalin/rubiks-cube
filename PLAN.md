@@ -51,13 +51,14 @@ Built with Vite.
 - [x] Declare `three`, `lucide-react` dependencies (run `npm install`)
 - [x] WebGPU init + capability check + WebGL2 fallback info notice
 - [x] Demo page shell (header, backend badge, stage)
-- [ ] Verify Phase 1 locally (`npm install && npm run dev`) - needs your confirmation
+- [x] Verify Phase 1 locally (`npm install && npm run dev`) - confirmed
 
 ### Phase 2 - Static cube
-- [ ] Cubie geometry (rounded box) x 26
-- [ ] TSL sticker material (rounded sticker mask, black plastic body)
-- [ ] Default colors via uniforms
-- [ ] Lighting + camera framing
+- [x] Cubie geometry (rounded box) x 26 + dark inner core
+- [x] TSL sticker material (rounded sticker mask, dark plastic body)
+- [x] Default colors via uniforms (`setColors` ready for Phase 6)
+- [x] Lighting + camera framing
+- [ ] Verify Phase 2 locally (colors, sticker shape, lighting, WebGPU + WebGL2) - needs your confirmation
 
 ### Phase 3 - Interaction
 - [ ] Drag / swipe 360 degree rotation (mouse + touch)
@@ -101,4 +102,5 @@ Built with Vite.
 
 ## Progress Log
 - Planning: plan drafted, decisions resolved
-- Phase 1: scaffold created (Vite + React + TS), renderer bootstrap with WebGPU/WebGL2 fallback notice, placeholder spinning box (replaced in Phase 2). Not yet run locally.
+- Phase 1: scaffold created (Vite + React + TS), renderer bootstrap with WebGPU/WebGL2 fallback notice, placeholder spinning box. Verified locally by user.
+- Phase 2: 26 rounded cubies, shared TSL sticker material (colors via uniforms, per-cubie `home` attribute decides which faces have stickers), lights, camera framing. Temporary auto-rotate for inspection (removed in Phase 3). Not yet run locally.
