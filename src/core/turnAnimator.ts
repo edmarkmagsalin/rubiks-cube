@@ -8,8 +8,8 @@ interface QueueItem {
   move: Move;
   /** ms for this move; 0 = apply instantly. */
   duration: number;
-  /** Resolves the promise of the batch this move belongs to (set on its last move). */
-  done?: () => void;
+  /** Settles the promise of the batch this move belongs to (set on its last move). */
+  done?: (completed: boolean) => void;
 }
 
 interface ActiveTurn extends QueueItem {
@@ -69,8 +69,12 @@ function moveFromTurn(axis: THREE.Vector3, coord: number | null, quarters: numbe
 export class TurnAnimator {
   /** Default ms per move. */
   defaultDuration: number;
+  /** Called when a queued (API) move starts turning. */
+  onMoveStart?: (move: Move) => void;
   /** Called after every finished move (API-queued or user-dragged). */
   onMoveEnd?: (move: Move, source: MoveSource) => void;
+  /** While true, queued moves hold still (a move already turning freezes mid-turn). */
+  paused = false;
 
   private readonly pivot = new THREE.Group();
   private readonly queue: QueueItem[] = [];
@@ -97,13 +101,14 @@ export class TurnAnimator {
   }
 
   /**
-   * Queue moves. Resolves when the last of them has finished.
-   * `duration` overrides the default ms per move for this batch (0 = instant).
+   * Queue moves. Resolves true when the last of them has finished, or false
+   * if they were cancelled first. `duration` overrides the default ms per move
+   * for this batch (0 = instant).
    */
-  enqueue(moves: readonly Move[], duration?: number): Promise<void> {
+  enqueue(moves: readonly Move[], duration?: number): Promise<boolean> {
     const ms = Math.max(0, duration ?? this.defaultDuration);
-    if (moves.length === 0) return Promise.resolve();
-    return new Promise<void>((resolve) => {
+    if (moves.length === 0) return Promise.resolve(true);
+    return new Promise<boolean>((resolve) => {
       moves.forEach((move, i) => {
         this.queue.push({ move, duration: ms, done: i === moves.length - 1 ? resolve : undefined });
       });
@@ -163,6 +168,32 @@ export class TurnAnimator {
     m.duration = 120 + 160 * Math.abs(target - cur);
   }
 
+  /** Drop queued moves that have not started. The move already turning finishes. */
+  clearQueue(): void {
+    for (const item of this.queue) item.done?.(false);
+    this.queue.length = 0;
+  }
+
+  /**
+   * Hard stop: abandon everything, including a half-turned layer. Only use it
+   * right before the cube's pieces are overwritten (setState / reset / dispose).
+   */
+  cancel(): void {
+    // Pivot back to identity first: the half-turned layer snaps back to where it started.
+    if (this.manual) {
+      this.pivot.quaternion.identity();
+      this.commit(this.manual.layer);
+      this.manual = null;
+    }
+    if (this.current) {
+      this.pivot.quaternion.identity();
+      this.commit(this.current.layer);
+      this.current.done?.(false);
+      this.current = null;
+    }
+    this.clearQueue();
+  }
+
   // ---- frame update -------------------------------------------------------
 
   /** Advance the animation. Call once per frame with elapsed milliseconds. */
@@ -171,6 +202,7 @@ export class TurnAnimator {
       this.updateManual(dtMs);
       if (this.manual) return; // still dragging or settling: queued moves wait
     }
+    if (this.paused) return;
 
     let budget = dtMs;
     for (;;) {
@@ -193,14 +225,7 @@ export class TurnAnimator {
   }
 
   dispose(): void {
-    if (this.manual) {
-      this.pivot.quaternion.setFromAxisAngle(this.manual.axis, this.manual.to);
-      this.commit(this.manual.layer);
-      this.manual = null;
-    }
-    if (this.current) this.finish();
-    for (const item of this.queue) item.done?.();
-    this.queue.length = 0;
+    this.cancel();
     this.cube.group.remove(this.pivot);
   }
 
@@ -242,6 +267,7 @@ export class TurnAnimator {
     this.pivot.quaternion.identity();
     this.pivot.updateMatrixWorld(true);
     for (const mesh of layer) this.pivot.attach(mesh);
+    this.onMoveStart?.(item.move);
     return true;
   }
 
@@ -257,7 +283,7 @@ export class TurnAnimator {
     this.commit(turn.layer);
     this.current = null;
     this.onMoveEnd?.(turn.move, 'api');
-    turn.done?.();
+    turn.done?.(true);
   }
 
   /** Return the layer's cubies to the cube group and snap them to the grid. */

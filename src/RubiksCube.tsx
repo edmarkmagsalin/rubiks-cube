@@ -1,22 +1,45 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import * as THREE from 'three/webgpu';
 import { createRenderer, type BackendKind } from './core/webgpu';
-import { createCube } from './core/cubies';
+import { createCube, type CubeObject } from './core/cubies';
 import { createLights, frameCamera } from './core/stage';
 import { DragControls } from './core/dragControls';
 import { CubeInteraction } from './core/cubeInteraction';
 import { watchPixelRatio } from './core/dpr';
 import { TurnAnimator, type MoveSource } from './core/turnAnimator';
-import { parseMoves, type Move } from './core/moves';
+import { formatMoves, parseMoves, type Move } from './core/moves';
+import { SOLVED_STATE, validateState } from './core/cubeState';
+import { applyState, readState } from './core/sceneState';
 import { DEFAULT_COLORS } from './core/constants';
 
 export interface RubiksCubeProps {
-  /** Called once the renderer is ready, with the backend actually in use. */
-  onBackendReady?: (backend: BackendKind) => void;
-  /** Default duration of one move in milliseconds. Default 300. */
+  /**
+   * Cube state as a 54-character facelet string in U R F D L B order
+   * (9 stickers per face, read row by row as seen from outside the face).
+   * Defaults to solved. Changing it re-renders the cube in that state instantly.
+   */
+  state?: string;
+  /**
+   * Moves to animate, e.g. "R U R' U' F2 M x" or Move objects. They play
+   * from the current state whenever the sequence changes (if `autoPlay`).
+   */
+  moves?: string | readonly Move[];
+  /** Play `moves` automatically when they change. Default true. Otherwise call ref.play(). */
+  autoPlay?: boolean;
+  /** Milliseconds per move. Default 300. */
   moveDuration?: number;
-  /** Fired after every finished move: from `applyMoves` ('api') or dragged by the user ('user'). */
+  /** Renderer ready: backend actually in use ('webgpu' or the 'webgl2' fallback). */
+  onBackendReady?: (backend: BackendKind) => void;
+  /** A queued (API) move started turning. */
+  onMoveStart?: (move: Move) => void;
+  /** A move finished: played from `moves` / applyMoves ('api') or dragged by the user ('user'). */
   onMoveEnd?: (move: Move, source: MoveSource) => void;
+  /** A `moves` / play() / applyMoves() sequence finished (not called if it was cancelled). */
+  onSequenceEnd?: () => void;
+  /** Facelet string after every finished move. Whole-cube rotations (x y z) are factored out. */
+  onStateChange?: (state: string) => void;
+  /** Invalid `state` or `moves` props. Without it, errors are logged to the console. */
+  onError?: (error: Error) => void;
   className?: string;
 }
 
@@ -24,48 +47,101 @@ export interface RubiksCubeHandle {
   /**
    * Queue moves such as "R U R' U' F2 M x" (or Move objects). Supports faces
    * (U D L R F B), wide (u d l r f b or Rw), slices (M E S) and whole-cube
-   * rotations (x y z). Resolves when the
-   * last one finishes. `duration` overrides ms per move (0 = instant).
-   * Rejects if the notation is invalid.
+   * rotations (x y z). Resolves true when the last one finishes, false if
+   * cancelled. Rejects if the notation is invalid. `duration` = ms per move (0 = instant).
    */
-  applyMoves: (moves: string | readonly Move[], options?: { duration?: number }) => Promise<void>;
+  applyMoves: (moves: string | readonly Move[], options?: { duration?: number }) => Promise<boolean>;
+  /** Play the current `moves` prop (useful with autoPlay={false} or to replay). */
+  play: () => Promise<boolean>;
+  /** Freeze playback. Queued moves wait; a turn in progress stops mid-way. */
+  pause: () => void;
+  resume: () => void;
+  /** Drop queued moves that have not started yet. */
+  stop: () => void;
+  /** Show this state instantly (cancels any animation). Throws if the state is invalid. */
+  setState: (state: string) => void;
+  /** Back to solved, instantly. */
+  reset: () => void;
+  /** Facelet string after the last finished move. */
+  getState: () => string;
 }
 
 /**
- * Phase 4b: rotatable cube that plays eased turns (faces, slices, wide, x y z)
- * and can be turned by hand: drag a layer, drag the background to rotate freely,
+ * Rubik's Cube rendered with Three.js TSL on WebGPU (WebGL2 fallback).
+ * Drag the background to rotate freely, drag the cube to turn a layer,
  * Shift/Ctrl/Cmd + drag or two fingers for a whole-cube x/y/z turn.
- * Use the ref handle's applyMoves(). Props for state/moves come in Phase 5.
  */
 export const RubiksCube = forwardRef<RubiksCubeHandle, RubiksCubeProps>(function RubiksCube(
-  { onBackendReady, moveDuration = 300, onMoveEnd, className },
+  {
+    state,
+    moves,
+    autoPlay = true,
+    moveDuration = 300,
+    onBackendReady,
+    onMoveStart,
+    onMoveEnd,
+    onSequenceEnd,
+    onStateChange,
+    onError,
+    className,
+  },
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const onReadyRef = useRef(onBackendReady);
-  onReadyRef.current = onBackendReady;
-  const onMoveEndRef = useRef(onMoveEnd);
-  onMoveEndRef.current = onMoveEnd;
-  const durationRef = useRef(moveDuration);
-  durationRef.current = moveDuration;
+  const cubeRef = useRef<CubeObject | null>(null);
   const animatorRef = useRef<TurnAnimator | null>(null);
+  const stateRef = useRef(SOLVED_STATE);
+
+  // Latest props for use inside long-lived callbacks.
+  const live = useRef({ state, moves, moveDuration, onBackendReady, onMoveStart, onMoveEnd, onSequenceEnd, onStateChange, onError });
+  live.current = { state, moves, moveDuration, onBackendReady, onMoveStart, onMoveEnd, onSequenceEnd, onStateChange, onError };
+
+  const report = (err: unknown) => {
+    const error = err instanceof Error ? err : new Error(String(err));
+    if (live.current.onError) live.current.onError(error);
+    else console.error(error);
+  };
+
+  /** Instantly show a state. Throws on invalid input. */
+  const setStateNow = (value: string) => {
+    const cube = cubeRef.current;
+    const animator = animatorRef.current;
+    if (!cube || !animator) return;
+    const check = validateState(value);
+    if (!check.ok) throw new Error(check.error);
+    animator.cancel();
+    applyState(cube, check.state);
+    stateRef.current = check.state;
+  };
+
+  const run = async (input: string | readonly Move[], duration?: number): Promise<boolean> => {
+    const animator = animatorRef.current;
+    if (!animator) return false;
+    const completed = await animator.enqueue(parseMoves(input), duration);
+    if (completed) live.current.onSequenceEnd?.();
+    return completed;
+  };
 
   useImperativeHandle(
     ref,
     () => ({
-      applyMoves: async (moves, options) => {
-        const animator = animatorRef.current;
-        if (!animator) return;
-        await animator.enqueue(parseMoves(moves), options?.duration);
+      applyMoves: (input, options) => run(input, options?.duration),
+      play: () => (live.current.moves === undefined ? Promise.resolve(true) : run(live.current.moves)),
+      pause: () => {
+        if (animatorRef.current) animatorRef.current.paused = true;
       },
+      resume: () => {
+        if (animatorRef.current) animatorRef.current.paused = false;
+      },
+      stop: () => animatorRef.current?.clearQueue(),
+      setState: (value) => setStateNow(value),
+      reset: () => setStateNow(SOLVED_STATE),
+      getState: () => stateRef.current,
     }),
     [],
   );
 
-  useEffect(() => {
-    if (animatorRef.current) animatorRef.current.defaultDuration = moveDuration;
-  }, [moveDuration]);
-
+  // ---- scene lifecycle (runs once) ----
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -88,10 +164,27 @@ export const RubiksCube = forwardRef<RubiksCubeHandle, RubiksCubeProps>(function
 
     const cube = createCube(DEFAULT_COLORS);
     scene.add(cube.group);
+    cubeRef.current = cube;
 
-    const animator = new TurnAnimator(cube, durationRef.current);
-    animator.onMoveEnd = (move, source) => onMoveEndRef.current?.(move, source);
+    const animator = new TurnAnimator(cube, live.current.moveDuration);
     animatorRef.current = animator;
+    animator.onMoveStart = (move) => live.current.onMoveStart?.(move);
+    animator.onMoveEnd = (move, source) => {
+      live.current.onMoveEnd?.(move, source);
+      stateRef.current = readState(cube);
+      live.current.onStateChange?.(stateRef.current);
+    };
+
+    // Initial state before the first frame, so there is no solved-cube flash.
+    stateRef.current = SOLVED_STATE;
+    if (live.current.state !== undefined) {
+      try {
+        setStateNow(live.current.state);
+      } catch (err) {
+        report(err);
+      }
+    }
+
     const free = new DragControls(cube.group, camera, canvas);
     const interaction = new CubeInteraction(cube, animator, camera, canvas, free);
 
@@ -131,7 +224,7 @@ export const RubiksCube = forwardRef<RubiksCubeHandle, RubiksCubeProps>(function
           renderer!.render(scene, camera);
         });
 
-        onReadyRef.current?.(backend);
+        live.current.onBackendReady?.(backend);
       })
       .catch((err) => console.error('Renderer init failed', err));
 
@@ -142,6 +235,7 @@ export const RubiksCube = forwardRef<RubiksCubeHandle, RubiksCubeProps>(function
       interaction.dispose();
       animator.dispose();
       animatorRef.current = null;
+      cubeRef.current = null;
       if (renderer) {
         renderer.setAnimationLoop(null);
         renderer.dispose();
@@ -150,6 +244,28 @@ export const RubiksCube = forwardRef<RubiksCubeHandle, RubiksCubeProps>(function
       canvas.remove();
     };
   }, []);
+
+  // ---- props -> cube ----
+  useEffect(() => {
+    if (moveDuration !== undefined && animatorRef.current) animatorRef.current.defaultDuration = moveDuration;
+  }, [moveDuration]);
+
+  // `state` prop changed: show it instantly (undefined = solved).
+  useEffect(() => {
+    try {
+      setStateNow(state ?? SOLVED_STATE);
+    } catch (err) {
+      report(err);
+    }
+  }, [state]);
+
+  // `moves` prop changed: replace anything still queued and play the new sequence.
+  const movesKey = moves === undefined ? null : typeof moves === 'string' ? moves.trim().replace(/\s+/g, ' ') : formatMoves(moves);
+  useEffect(() => {
+    if (movesKey === null || !autoPlay) return;
+    animatorRef.current?.clearQueue();
+    run(live.current.moves!).catch(report);
+  }, [movesKey, autoPlay]);
 
   return <div ref={containerRef} className={className} style={{ width: '100%', height: '100%' }} />;
 });

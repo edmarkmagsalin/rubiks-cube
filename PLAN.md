@@ -77,7 +77,7 @@ Built with Vite.
 - [x] Whole-cube rotations (x y z), middle slices (M E S) and wide moves (round 2 feedback)
 - [x] Fix: black slab visible during turns (inner core was larger than the turning layer; now small enough to stay hidden)
 - [x] Demo: removed the 18 move buttons (sequence input, Scramble and speed slider kept)
-- [ ] Verify Phase 4 (round 2): no black slab, slices and x y z turn correctly, long scrambles stay aligned - needs your confirmation
+- [x] Verify Phase 4 (round 2): no black slab, slices and x y z turn correctly, long scrambles stay aligned - confirmed
 
 ### Phase 4b - Manual layer turning by drag
 - [x] Raycast to find the grabbed cubie, face and point
@@ -88,13 +88,17 @@ Built with Vite.
 - [x] Animator manual-turn API; programmatic moves wait while the user is turning, user drags are ignored while moves play
 - [x] `onMoveEnd(move, source)` callback ('api' or 'user'); dragged turns are reported in standard notation
 - [x] Demo shows the last move and the gesture hints
-- [ ] Verify Phase 4b: layer drag direction/feel, middle slices, Shift/Ctrl whole-cube lock, two-finger turn, flick, background rotation - needs your confirmation
+- [x] Verify Phase 4b: layer drag, slices, whole-cube lock, two-finger turn - confirmed (feels natural)
 
 ### Phase 5 - State and sequences
-- [ ] `state` prop (facelet string) + validation
-- [ ] `moves` prop with duration / speed
-- [ ] Imperative handle + callbacks
-- [ ] Solved default
+- [x] `state` prop (54-char facelet string, URFDLB) with validation: length, letters, 9 of each color, impossible pieces, mirrored corners, and solvability (twist, flip, parity)
+- [x] `moves` prop (+ `autoPlay`, default true) plays from the current state when the sequence changes; `moveDuration` = ms per move
+- [x] Imperative handle: applyMoves, play, pause, resume, stop, setState, reset, getState
+- [x] Callbacks: onMoveStart, onMoveEnd, onSequenceEnd, onStateChange, onError
+- [x] Solved default; state shown before the first frame (no solved flash)
+- [x] Pure cube model tested outside the browser (random scrambles round-trip, known R facelet string, invalid states rejected)
+- [x] Demo: set state, reset, pause/resume, live state read-out, `?state=...&moves=...` URL to try the props
+- [ ] Verify Phase 5 locally (set state from a pasted scramble, reset, pause/resume, URL props, onStateChange read-out) - needs your confirmation
 
 ### Phase 6 - Customization
 - [ ] `colors` prop
@@ -116,9 +120,12 @@ Built with Vite.
 6. App component first (library packaging later)
 7. Manual layer turning by drag: yes. Drag on the cube turns that layer; drag on the background rotates the whole cube freely.
 8. Whole-cube turn gesture: two-finger drag on touch; on desktop, holding Shift or Ctrl while dragging locks the drag to a whole-cube x/y/z turn.
+9. `state` format: 54-character facelet string in URFDLB order (confirmed).
 
 ## Pending Decisions
-1. Facelet string format for the `state` prop (Phase 5): 54 characters in URFDLB order (Kociemba standard). Not yet confirmed.
+1. `getState()` / `onStateChange` ignore whole-cube rotations (x y z): the string always has standard centers, so it can be fed back into `state`. Unconfirmed.
+2. `moves` prop replays only when the sequence text changes (use `ref.play()` to replay the same one); a new sequence replaces anything still queued. Unconfirmed.
+3. Invalid `state` / `moves` props do not throw: they call `onError` (or log) and the cube is left as is. Unconfirmed.
 
 ## Progress Log
 - Planning: plan drafted, decisions resolved
@@ -127,4 +134,5 @@ Built with Vite.
 - Phase 3: trackball drag/swipe around camera axes (no gimbal lock) with inertia, single-pointer, `touch-action: none`; DPR change watcher; temporary auto-rotate removed; drag hint in demo. Verified locally by user.
 - Phase 4: `moves.ts` (parser, formatter, random scramble), `turnAnimator.ts` (queue, pivot, easing, snap), ref handle `applyMoves()`, demo controls. Round 1 feedback: black slab during turns, need slices/wide/x y z, remove move buttons.
 - Phase 4 round 2: new move table in `moves.ts` (axis + layers per symbol), animator reads it; core shrunk to 0.9; move buttons removed. Round 2 not yet confirmed.
-- Phase 4b: new `cubeInteraction.ts` owns pointer input (layer drag, background free rotation, modifier/two-finger whole-cube turn); `turnAnimator.ts` gets manual turn API + `onMoveEnd`; `dragControls.ts` now only does free rotation. Not yet run locally.
+- Phase 4b: new `cubeInteraction.ts` owns pointer input (layer drag, background free rotation, modifier/two-finger whole-cube turn); `turnAnimator.ts` gets manual turn API + `onMoveEnd`; `dragControls.ts` now only does free rotation. Verified locally by user (feels natural).
+- Phase 5: pure `cubeState.ts` (facelet <-> pieces, validation, solvability), `sceneState.ts` bridge, props/handle/callbacks in `RubiksCube.tsx`, animator gets cancel/clearQueue/pause. Model logic tested with scripts; the browser side not yet run.
