@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Cpu, Info } from 'lucide-react';
+import { Box, Cpu, Hand, Info } from 'lucide-react';
 import { RubiksCube } from '../RubiksCube';
 import type { BackendKind } from '../core/webgpu';
 
@@ -31,6 +31,10 @@ export function App() {
 
       <main className="stage">
         <RubiksCube onBackendReady={setBackend} />
+        <p className="hint">
+          <Hand size={14} />
+          Drag or swipe to rotate
+        </p>
       </main>
     </div>
   );

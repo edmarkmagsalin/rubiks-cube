@@ -58,12 +58,13 @@ Built with Vite.
 - [x] TSL sticker material (rounded sticker mask, dark plastic body)
 - [x] Default colors via uniforms (`setColors` ready for Phase 6)
 - [x] Lighting + camera framing
-- [ ] Verify Phase 2 locally (colors, sticker shape, lighting, WebGPU + WebGL2) - needs your confirmation
+- [x] Verify Phase 2 locally (colors, sticker shape, lighting, WebGPU + WebGL2) - confirmed
 
 ### Phase 3 - Interaction
-- [ ] Drag / swipe 360 degree rotation (mouse + touch)
-- [ ] Inertia / damping
-- [ ] Resize + DPR handling
+- [x] Drag / swipe 360 degree rotation (mouse + touch)
+- [x] Inertia / damping
+- [x] Resize + DPR handling (ResizeObserver + pixel-ratio watcher)
+- [ ] Verify Phase 3 locally (mouse drag, touch swipe, inertia feel, browser zoom) - needs your confirmation
 
 ### Phase 4 - Turning
 - [ ] Move parser (U D L R F B, ', 2)
@@ -103,4 +104,5 @@ Built with Vite.
 ## Progress Log
 - Planning: plan drafted, decisions resolved
 - Phase 1: scaffold created (Vite + React + TS), renderer bootstrap with WebGPU/WebGL2 fallback notice, placeholder spinning box. Verified locally by user.
-- Phase 2: 26 rounded cubies, shared TSL sticker material (colors via uniforms, per-cubie `home` attribute decides which faces have stickers), lights, camera framing. Temporary auto-rotate for inspection (removed in Phase 3). Not yet run locally.
+- Phase 2: 26 rounded cubies, shared TSL sticker material (colors via uniforms, per-cubie `home` attribute decides which faces have stickers), lights, camera framing. Temporary auto-rotate for inspection (removed in Phase 3). Verified locally by user.
+- Phase 3: trackball drag/swipe around camera axes (no gimbal lock) with inertia, single-pointer, `touch-action: none`; DPR change watcher; temporary auto-rotate removed; drag hint in demo. Not yet run locally.

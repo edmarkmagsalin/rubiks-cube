@@ -3,6 +3,8 @@ import * as THREE from 'three/webgpu';
 import { createRenderer, type BackendKind } from './core/webgpu';
 import { createCube } from './core/cubies';
 import { createLights, frameCamera } from './core/stage';
+import { DragControls } from './core/dragControls';
+import { watchPixelRatio } from './core/dpr';
 import { DEFAULT_COLORS } from './core/constants';
 
 export interface RubiksCubeProps {
@@ -12,9 +14,8 @@ export interface RubiksCubeProps {
 }
 
 /**
- * Phase 2: static solved cube (26 cubies, TSL sticker material, lights, framing).
- * A slow auto-rotation is TEMPORARY so every face can be checked; it is
- * replaced by drag controls in Phase 3.
+ * Phase 3: static solved cube you can rotate 360 degrees by dragging
+ * (mouse) or swiping (touch), with inertia. Resize and pixel-ratio aware.
  */
 export function RubiksCube({ onBackendReady, className }: RubiksCubeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -28,6 +29,7 @@ export function RubiksCube({ onBackendReady, className }: RubiksCubeProps) {
     let cancelled = false;
     let renderer: THREE.WebGPURenderer | null = null;
     let observer: ResizeObserver | null = null;
+    let unwatchDpr: (() => void) | null = null;
 
     const canvas = document.createElement('canvas');
     canvas.style.display = 'block';
@@ -43,6 +45,8 @@ export function RubiksCube({ onBackendReady, className }: RubiksCubeProps) {
     const cube = createCube(DEFAULT_COLORS);
     scene.add(cube.group);
 
+    const controls = new DragControls(cube.group, camera, canvas);
+
     createRenderer(canvas)
       .then(({ renderer: r, backend }) => {
         if (cancelled) {
@@ -50,7 +54,6 @@ export function RubiksCube({ onBackendReady, className }: RubiksCubeProps) {
           return;
         }
         renderer = r;
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
         const resize = () => {
           const { clientWidth: w, clientHeight: h } = container;
@@ -60,12 +63,22 @@ export function RubiksCube({ onBackendReady, className }: RubiksCubeProps) {
           camera.updateProjectionMatrix();
           frameCamera(camera, camera.aspect);
         };
+
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         resize();
         observer = new ResizeObserver(resize);
         observer.observe(container);
+        unwatchDpr = watchPixelRatio((dpr) => {
+          renderer!.setPixelRatio(Math.min(dpr, 2));
+          resize();
+        });
 
+        let last = performance.now();
         renderer.setAnimationLoop(() => {
-          cube.group.rotation.y += 0.004; // TEMPORARY (Phase 3 replaces this)
+          const now = performance.now();
+          const dt = Math.min((now - last) / 1000, 0.1);
+          last = now;
+          controls.update(dt);
           renderer!.render(scene, camera);
         });
 
@@ -76,6 +89,8 @@ export function RubiksCube({ onBackendReady, className }: RubiksCubeProps) {
     return () => {
       cancelled = true;
       observer?.disconnect();
+      unwatchDpr?.();
+      controls.dispose();
       if (renderer) {
         renderer.setAnimationLoop(null);
         renderer.dispose();

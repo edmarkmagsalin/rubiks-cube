@@ -26,4 +26,5 @@ body { background: var(--bg); color: var(--fg); font-family: system-ui, sans-ser
 .badge { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; }
 .notice { display: flex; align-items: flex-start; gap: 8px; padding: 10px 16px; font-size: 13px; background: var(--info-bg); color: var(--info-fg); }
 .notice svg { flex: none; margin-top: 2px; }
-.stage { flex: 1; min-height: 0; }
+.stage { position: relative; flex: 1; min-height: 0; }
+.hint { position: absolute; left: 0; right: 0; bottom: 12px; margin: 0; display: flex; justify-content: center; align-items: center; gap: 6px; font-size: 12px; opacity: 0.6; pointer-events: none; }
