@@ -16,7 +16,9 @@ export const DEFAULT_COLORS: FaceColors = {
 // Cubie geometry (cubies are spaced 1 unit apart)
 export const CUBIE_SIZE = 0.98;
 export const CUBIE_RADIUS = 0.09;
-export const CORE_SIZE = 2.9;
+/** Small dark core that only fills the hidden center void. Must stay smaller than the
+ * void so it never shows while layers turn (a larger core poked out as a black slab). */
+export const CORE_SIZE = 0.9;
 /** Bounding sphere radius of the whole cube (corner of the outer cubies). */
 export const CUBE_BOUNDING_RADIUS = 2.6;
 

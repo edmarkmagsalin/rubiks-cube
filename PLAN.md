@@ -64,14 +64,31 @@ Built with Vite.
 - [x] Drag / swipe 360 degree rotation (mouse + touch)
 - [x] Inertia / damping
 - [x] Resize + DPR handling (ResizeObserver + pixel-ratio watcher)
-- [ ] Verify Phase 3 locally (mouse drag, touch swipe, inertia feel, browser zoom) - needs your confirmation
+- [x] Verify Phase 3 locally (mouse drag, touch swipe, inertia feel, browser zoom) - confirmed
 
 ### Phase 4 - Turning
-- [ ] Move parser (U D L R F B, ', 2)
-- [ ] Layer selection + pivot group
-- [ ] Eased animation (quaternion slerp, visible progress)
-- [ ] Move queue
-- [ ] Commit rotation back to cubies (no drift)
+- [x] Move parser: faces U D L R F B, wide (u d l r f b or Rw), slices M E S, whole-cube x y z; suffixes ' and 2 (also 2' and typographic primes)
+- [x] Layer selection + pivot group
+- [x] Eased animation (ease-in-out cubic on axis-angle; chosen over slerp because half turns are ambiguous for slerp)
+- [x] Move queue (leftover frame time carries into the next move, no stutter)
+- [x] Commit rotation back to cubies, snapped to the 90-degree grid (no drift)
+- [x] Minimal `applyMoves()` ref handle + `moveDuration` prop (needed to test; rest of API in Phase 5)
+- [x] Demo controls: 18 move buttons, sequence input, scramble, speed slider
+- [x] Whole-cube rotations (x y z), middle slices (M E S) and wide moves (round 2 feedback)
+- [x] Fix: black slab visible during turns (inner core was larger than the turning layer; now small enough to stay hidden)
+- [x] Demo: removed the 18 move buttons (sequence input, Scramble and speed slider kept)
+- [ ] Verify Phase 4 (round 2): no black slab, slices and x y z turn correctly, long scrambles stay aligned - needs your confirmation
+
+### Phase 4b - Manual layer turning by drag
+- [x] Raycast to find the grabbed cubie, face and point
+- [x] Drag direction on the grabbed face picks the axis and layer (works for outer layers and middle slices)
+- [x] Layer follows the finger/mouse; on release it settles to the nearest quarter turn (a flick can carry to the next one)
+- [x] Background drag = free 360 rotation with inertia (kept)
+- [x] Whole-cube turn locked to x / y / z: Shift/Ctrl/Cmd + drag (desktop), two-finger drag (touch)
+- [x] Animator manual-turn API; programmatic moves wait while the user is turning, user drags are ignored while moves play
+- [x] `onMoveEnd(move, source)` callback ('api' or 'user'); dragged turns are reported in standard notation
+- [x] Demo shows the last move and the gesture hints
+- [ ] Verify Phase 4b: layer drag direction/feel, middle slices, Shift/Ctrl whole-cube lock, two-finger turn, flick, background rotation - needs your confirmation
 
 ### Phase 5 - State and sequences
 - [ ] `state` prop (facelet string) + validation
@@ -97,12 +114,17 @@ Built with Vite.
 4. Logo on the white center sticker only
 5. Speed prop in ms per move
 6. App component first (library packaging later)
+7. Manual layer turning by drag: yes. Drag on the cube turns that layer; drag on the background rotates the whole cube freely.
+8. Whole-cube turn gesture: two-finger drag on touch; on desktop, holding Shift or Ctrl while dragging locks the drag to a whole-cube x/y/z turn.
 
 ## Pending Decisions
-1. Drag behavior: dragging anywhere rotates the whole cube, no manual layer turning for now (assumed unless you say otherwise)
+1. Facelet string format for the `state` prop (Phase 5): 54 characters in URFDLB order (Kociemba standard). Not yet confirmed.
 
 ## Progress Log
 - Planning: plan drafted, decisions resolved
 - Phase 1: scaffold created (Vite + React + TS), renderer bootstrap with WebGPU/WebGL2 fallback notice, placeholder spinning box. Verified locally by user.
 - Phase 2: 26 rounded cubies, shared TSL sticker material (colors via uniforms, per-cubie `home` attribute decides which faces have stickers), lights, camera framing. Temporary auto-rotate for inspection (removed in Phase 3). Verified locally by user.
-- Phase 3: trackball drag/swipe around camera axes (no gimbal lock) with inertia, single-pointer, `touch-action: none`; DPR change watcher; temporary auto-rotate removed; drag hint in demo. Not yet run locally.
+- Phase 3: trackball drag/swipe around camera axes (no gimbal lock) with inertia, single-pointer, `touch-action: none`; DPR change watcher; temporary auto-rotate removed; drag hint in demo. Verified locally by user.
+- Phase 4: `moves.ts` (parser, formatter, random scramble), `turnAnimator.ts` (queue, pivot, easing, snap), ref handle `applyMoves()`, demo controls. Round 1 feedback: black slab during turns, need slices/wide/x y z, remove move buttons.
+- Phase 4 round 2: new move table in `moves.ts` (axis + layers per symbol), animator reads it; core shrunk to 0.9; move buttons removed. Round 2 not yet confirmed.
+- Phase 4b: new `cubeInteraction.ts` owns pointer input (layer drag, background free rotation, modifier/two-finger whole-cube turn); `turnAnimator.ts` gets manual turn API + `onMoveEnd`; `dragControls.ts` now only does free rotation. Not yet run locally.

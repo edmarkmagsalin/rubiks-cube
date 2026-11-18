@@ -16,7 +16,7 @@ export interface CubeObject {
   dispose: () => void;
 }
 
-/** Builds the 26 cubies (solved state) plus a dark inner core that hides gaps. */
+/** Builds the 26 cubies (solved state) plus a small dark core filling the hidden center. */
 export function createCube(colors: FaceColors): CubeObject {
   const group = new THREE.Group();
   const sticker = createStickerMaterial(colors);
