@@ -21,6 +21,9 @@ export class DragControls {
   private readonly velocity = new THREE.Vector3(); // rad/s, world space
   private readonly damping: number;
   private readonly maxSpeed: number;
+  private readonly target: THREE.Object3D;
+  private readonly camera: THREE.Camera;
+  private readonly element: HTMLElement;
 
   // scratch objects (no per-frame allocation)
   private readonly vUp = new THREE.Vector3();
@@ -31,11 +34,14 @@ export class DragControls {
   private readonly quat = new THREE.Quaternion();
 
   constructor(
-    private readonly target: THREE.Object3D,
-    private readonly camera: THREE.Camera,
-    private readonly element: HTMLElement,
+    target: THREE.Object3D,
+    camera: THREE.Camera,
+    element: HTMLElement,
     options: DragControlsOptions = {},
   ) {
+    this.target = target;
+    this.camera = camera;
+    this.element = element;
     this.damping = options.damping ?? 3;
     this.maxSpeed = options.maxSpeed ?? 12;
   }

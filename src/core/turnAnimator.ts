@@ -81,11 +81,10 @@ export class TurnAnimator {
   private current: ActiveTurn | null = null;
   private manual: ManualTurn | null = null;
   private readonly tmpMatrix = new THREE.Matrix4();
+  private readonly cube: CubeObject;
 
-  constructor(
-    private readonly cube: CubeObject,
-    defaultDuration = 300,
-  ) {
+  constructor(cube: CubeObject, defaultDuration = 300) {
+    this.cube = cube;
     this.defaultDuration = defaultDuration;
     cube.group.add(this.pivot);
   }

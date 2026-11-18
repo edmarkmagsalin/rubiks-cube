@@ -136,3 +136,4 @@ Built with Vite.
 - Phase 4 round 2: new move table in `moves.ts` (axis + layers per symbol), animator reads it; core shrunk to 0.9; move buttons removed. Round 2 not yet confirmed.
 - Phase 4b: new `cubeInteraction.ts` owns pointer input (layer drag, background free rotation, modifier/two-finger whole-cube turn); `turnAnimator.ts` gets manual turn API + `onMoveEnd`; `dragControls.ts` now only does free rotation. Verified locally by user (feels natural).
 - Phase 5: pure `cubeState.ts` (facelet <-> pieces, validation, solvability), `sceneState.ts` bridge, props/handle/callbacks in `RubiksCube.tsx`, animator gets cancel/clearQueue/pause. Model logic tested with scripts; the browser side not yet run.
+- Phase 5 build fix: `pnpm build` failed with TS1294 (project tsconfig has `erasableSyntaxOnly`). Removed constructor parameter properties in `cubeInteraction.ts`, `dragControls.ts`, `turnAnimator.ts`. Rule from now on: no parameter properties, enums or namespaces.

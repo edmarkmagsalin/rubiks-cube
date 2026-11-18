@@ -52,14 +52,24 @@ export class CubeInteraction {
   private readonly raycaster = new THREE.Raycaster();
   private readonly ndc = new THREE.Vector2();
   private readonly meshes: THREE.Mesh[];
+  private readonly cube: CubeObject;
+  private readonly animator: TurnAnimator;
+  private readonly camera: THREE.PerspectiveCamera;
+  private readonly element: HTMLElement;
+  private readonly free: DragControls;
 
   constructor(
-    private readonly cube: CubeObject,
-    private readonly animator: TurnAnimator,
-    private readonly camera: THREE.PerspectiveCamera,
-    private readonly element: HTMLElement,
-    private readonly free: DragControls,
+    cube: CubeObject,
+    animator: TurnAnimator,
+    camera: THREE.PerspectiveCamera,
+    element: HTMLElement,
+    free: DragControls,
   ) {
+    this.cube = cube;
+    this.animator = animator;
+    this.camera = camera;
+    this.element = element;
+    this.free = free;
     this.meshes = cube.cubies.map((c) => c.mesh);
     element.style.touchAction = 'none'; // we handle swipes ourselves
     element.style.cursor = 'grab';
