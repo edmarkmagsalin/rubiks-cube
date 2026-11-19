@@ -1,9 +1,18 @@
 import { useMemo, useRef, useState } from 'react';
-import { Box, Cpu, Hand, Info, Pause, Play, RotateCcw, Shuffle, Upload } from 'lucide-react';
-import { RubiksCube, type RubiksCubeHandle } from '../RubiksCube';
+import { Box, Cpu, Hand, Image as ImageIcon, Info, Palette, Pause, Play, RotateCcw, Shuffle, Upload, X } from 'lucide-react';
+import { RubiksCube, type LogoOptions, type RubiksCubeHandle } from '../RubiksCube';
+import { DEFAULT_COLORS, FACES, type FaceColors } from '../core/constants';
 import type { BackendKind } from '../core/webgpu';
 import { formatMove, formatMoves, randomScramble, type Move } from '../core/moves';
 import { SOLVED_STATE } from '../core/cubeState';
+
+const SAMPLE_LOGO =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">' +
+      '<circle cx="128" cy="128" r="118" fill="#1d4ed8"/>' +
+      '<path d="M128 52l22 52h56l-45 33 17 54-50-33-50 33 17-54-45-33h56z" fill="#fff"/></svg>',
+  );
 
 export function App() {
   const cubeRef = useRef<RubiksCubeHandle>(null);
@@ -15,6 +24,10 @@ export function App() {
   const [paused, setPaused] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastMove, setLastMove] = useState<string | null>(null);
+  const [colors, setColors] = useState<FaceColors>({ ...DEFAULT_COLORS });
+  const [logoSrc, setLogoSrc] = useState<string | null>(null);
+  const [logoScale, setLogoScale] = useState(0.75);
+  const [logoRotation, setLogoRotation] = useState(0);
 
   // Props demo: open the page with ?state=<54 letters>&moves=R U R' U' to render a state / play moves on load.
   const initial = useMemo(() => {
@@ -27,6 +40,14 @@ export function App() {
     Promise.resolve()
       .then(fn)
       .catch((e) => setError(e instanceof Error ? e.message : String(e)));
+  };
+
+  const logo: LogoOptions | null = logoSrc ? { src: logoSrc, scale: logoScale, rotation: logoRotation } : null;
+
+  const pickLogo = (file: File | undefined) => {
+    if (!file) return;
+    if (logoSrc && logoSrc.startsWith('blob:')) URL.revokeObjectURL(logoSrc);
+    setLogoSrc(URL.createObjectURL(file));
   };
 
   const onMoveEnd = (move: Move, source: 'api' | 'user') =>
@@ -58,6 +79,8 @@ export function App() {
       <main className="stage">
         <RubiksCube
           ref={cubeRef}
+          colors={colors}
+          logo={logo}
           state={initial.state}
           moves={initial.moves}
           moveDuration={duration}
@@ -119,6 +142,39 @@ export function App() {
           >
             {paused ? <Play size={14} /> : <Pause size={14} />} {paused ? 'Resume' : 'Pause'}
           </button>
+        </div>
+
+        <div className="row wrap">
+          <Palette size={14} />
+          {FACES.map((f) => (
+            <label key={f} className="swatch" title={`${f} face color`}>
+              {f}
+              <input type="color" value={colors[f]} onChange={(e) => setColors({ ...colors, [f]: e.target.value })} />
+            </label>
+          ))}
+          <button onClick={() => setColors({ ...DEFAULT_COLORS })}>
+            <RotateCcw size={14} /> Default colors
+          </button>
+        </div>
+
+        <div className="row wrap">
+          <ImageIcon size={14} />
+          <label className="button">
+            <Upload size={14} /> Logo
+            <input type="file" accept="image/*" hidden onChange={(e) => pickLogo(e.target.files?.[0])} />
+          </label>
+          <button onClick={() => setLogoSrc(SAMPLE_LOGO)}>Sample logo</button>
+          <button disabled={!logoSrc} onClick={() => setLogoSrc(null)}>
+            <X size={14} /> Remove
+          </button>
+          <label className="row">
+            <span>Size {Math.round(logoScale * 100)}%</span>
+            <input type="range" min={0.2} max={1} step={0.05} value={logoScale} onChange={(e) => setLogoScale(Number(e.target.value))} />
+          </label>
+          <label className="row">
+            <span>Rotate {logoRotation} deg</span>
+            <input type="range" min={0} max={359} step={1} value={logoRotation} onChange={(e) => setLogoRotation(Number(e.target.value))} />
+          </label>
         </div>
 
         <label className="row">

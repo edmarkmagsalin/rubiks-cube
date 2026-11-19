@@ -13,6 +13,13 @@ export const DEFAULT_COLORS: FaceColors = {
   B: '#0046ad', // blue
 };
 
+/** Fills any missing/empty face color with the default. */
+export function resolveColors(colors?: Partial<FaceColors> | null): FaceColors {
+  const out = { ...DEFAULT_COLORS };
+  if (colors) for (const f of FACES) if (colors[f]) out[f] = colors[f] as string;
+  return out;
+}
+
 // Cubie geometry (cubies are spaced 1 unit apart)
 export const CUBIE_SIZE = 0.98;
 export const CUBIE_RADIUS = 0.09;

@@ -1,7 +1,7 @@
 import * as THREE from 'three/webgpu';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { CORE_SIZE, CUBIE_RADIUS, CUBIE_SIZE, type FaceColors } from './constants';
-import { createStickerMaterial } from './stickerMaterial';
+import { createStickerMaterial, type LogoSettings } from './stickerMaterial';
 
 export interface Cubie {
   mesh: THREE.Mesh;
@@ -13,6 +13,7 @@ export interface CubeObject {
   group: THREE.Group;
   cubies: Cubie[];
   setColors: (colors: Partial<FaceColors>) => void;
+  setLogo: (logo: THREE.Texture | null, settings?: LogoSettings) => void;
   dispose: () => void;
 }
 
@@ -63,6 +64,7 @@ export function createCube(colors: FaceColors): CubeObject {
     group,
     cubies,
     setColors: sticker.setColors,
+    setLogo: sticker.setLogo,
     dispose: () => {
       geometries.forEach((g) => g.dispose());
       base.dispose();

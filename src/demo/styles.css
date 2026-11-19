@@ -39,3 +39,8 @@ body { background: var(--bg); color: var(--fg); font-family: system-ui, sans-ser
 .error { margin: 0; font-size: 12px; color: #dc2626; }
 .muted { margin: 0; font-size: 12px; opacity: 0.7; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
+.row.wrap { flex-wrap: wrap; }
+.swatch { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; }
+.swatch input[type="color"] { width: 28px; height: 28px; padding: 0; border: 1px solid var(--border); border-radius: 6px; background: none; cursor: pointer; }
+.controls label.button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 10px; font-size: 13px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; }
+.controls button:disabled { opacity: 0.4; cursor: default; }

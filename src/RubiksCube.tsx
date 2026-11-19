@@ -10,9 +10,34 @@ import { TurnAnimator, type MoveSource } from './core/turnAnimator';
 import { formatMoves, parseMoves, type Move } from './core/moves';
 import { SOLVED_STATE, validateState } from './core/cubeState';
 import { applyState, readState } from './core/sceneState';
-import { DEFAULT_COLORS } from './core/constants';
+import { FACES, resolveColors, type FaceColors } from './core/constants';
+
+export interface LogoOptions {
+  /** Image URL (PNG, JPG, WebP, or SVG with width/height). Transparent PNG works best. */
+  src: string;
+  /** Logo width as a fraction of the sticker; aspect ratio is kept. Default 0.75. */
+  scale?: number;
+  /** Degrees, clockwise as seen looking at the white face. Default 0. */
+  rotation?: number;
+}
+
+function normalizeLogo(logo: RubiksCubeProps['logo']): LogoOptions | null {
+  if (!logo) return null;
+  const options = typeof logo === 'string' ? { src: logo } : logo;
+  return options.src ? options : null;
+}
 
 export interface RubiksCubeProps {
+  /**
+   * Sticker colors per face (U R F D L B). Any CSS color. Missing faces use the
+   * default primaries: U white, D yellow, F green, B blue, L orange, R red.
+   */
+  colors?: Partial<FaceColors>;
+  /**
+   * Logo on the center sticker of the white (U) face. A URL string or options.
+   * Default: no logo.
+   */
+  logo?: string | LogoOptions | null;
   /**
    * Cube state as a 54-character facelet string in U R F D L B order
    * (9 stickers per face, read row by row as seen from outside the face).
@@ -73,6 +98,8 @@ export interface RubiksCubeHandle {
  */
 export const RubiksCube = forwardRef<RubiksCubeHandle, RubiksCubeProps>(function RubiksCube(
   {
+    colors,
+    logo,
     state,
     moves,
     autoPlay = true,
@@ -93,8 +120,8 @@ export const RubiksCube = forwardRef<RubiksCubeHandle, RubiksCubeProps>(function
   const stateRef = useRef(SOLVED_STATE);
 
   // Latest props for use inside long-lived callbacks.
-  const live = useRef({ state, moves, moveDuration, onBackendReady, onMoveStart, onMoveEnd, onSequenceEnd, onStateChange, onError });
-  live.current = { state, moves, moveDuration, onBackendReady, onMoveStart, onMoveEnd, onSequenceEnd, onStateChange, onError };
+  const live = useRef({ colors, logo, state, moves, moveDuration, onBackendReady, onMoveStart, onMoveEnd, onSequenceEnd, onStateChange, onError });
+  live.current = { colors, logo, state, moves, moveDuration, onBackendReady, onMoveStart, onMoveEnd, onSequenceEnd, onStateChange, onError };
 
   const report = (err: unknown) => {
     const error = err instanceof Error ? err : new Error(String(err));
@@ -162,7 +189,7 @@ export const RubiksCube = forwardRef<RubiksCubeHandle, RubiksCubeProps>(function
     frameCamera(camera, 1);
     createLights().forEach((light) => scene.add(light));
 
-    const cube = createCube(DEFAULT_COLORS);
+    const cube = createCube(resolveColors(live.current.colors));
     scene.add(cube.group);
     cubeRef.current = cube;
 
@@ -249,6 +276,60 @@ export const RubiksCube = forwardRef<RubiksCubeHandle, RubiksCubeProps>(function
   useEffect(() => {
     if (moveDuration !== undefined && animatorRef.current) animatorRef.current.defaultDuration = moveDuration;
   }, [moveDuration]);
+
+  // `colors` prop changed: uniform update, no rebuild.
+  const colorsKey = FACES.map((f) => colors?.[f] ?? '').join('|');
+  useEffect(() => {
+    cubeRef.current?.setColors(resolveColors(live.current.colors));
+  }, [colorsKey]);
+
+  // `logo` image changed: load it (the texture is kept while size/rotation change).
+  const logoTexRef = useRef<THREE.Texture | null>(null);
+  const logoSrc = normalizeLogo(logo)?.src ?? '';
+  useEffect(() => {
+    const cube = cubeRef.current;
+    if (!cube) return;
+    if (!logoSrc) {
+      cube.setLogo(null);
+      return;
+    }
+
+    let cancelled = false;
+    const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin('anonymous');
+    loader.load(
+      logoSrc,
+      (tex) => {
+        if (cancelled) {
+          tex.dispose();
+          return;
+        }
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.anisotropy = 8;
+        logoTexRef.current = tex;
+        const o = normalizeLogo(live.current.logo);
+        cube.setLogo(tex, { scale: o?.scale, rotation: o?.rotation });
+      },
+      undefined,
+      () => {
+        if (!cancelled) report(new Error(`Could not load the logo image "${logoSrc}".`));
+      },
+    );
+
+    return () => {
+      cancelled = true;
+      cube.setLogo(null);
+      logoTexRef.current?.dispose();
+      logoTexRef.current = null;
+    };
+  }, [logoSrc]);
+
+  // `logo.scale` / `logo.rotation` changed: cheap uniform update.
+  const logoScale = normalizeLogo(logo)?.scale;
+  const logoRotation = normalizeLogo(logo)?.rotation;
+  useEffect(() => {
+    if (logoTexRef.current) cubeRef.current?.setLogo(logoTexRef.current, { scale: logoScale, rotation: logoRotation });
+  }, [logoScale, logoRotation]);
 
   // `state` prop changed: show it instantly (undefined = solved).
   useEffect(() => {

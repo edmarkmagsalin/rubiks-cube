@@ -98,18 +98,22 @@ Built with Vite.
 - [x] Solved default; state shown before the first frame (no solved flash)
 - [x] Pure cube model tested outside the browser (random scrambles round-trip, known R facelet string, invalid states rejected)
 - [x] Demo: set state, reset, pause/resume, live state read-out, `?state=...&moves=...` URL to try the props
-- [ ] Verify Phase 5 locally (set state from a pasted scramble, reset, pause/resume, URL props, onStateChange read-out) - needs your confirmation
+- [x] Verify Phase 5 locally (set state, reset, pause/resume, URL props, state read-out) - confirmed
 
 ### Phase 6 - Customization
-- [ ] `colors` prop
-- [ ] `logo` prop (texture on white center, TSL texture node)
-- [ ] Default = no logo
+- [x] `colors` prop: partial map per face (U R F D L B), any CSS color, missing faces use the defaults; uniform update, no shader rebuild
+- [x] `logo` prop on the white (U) center sticker only: URL string or `{ src, scale, rotation }`; TSL texture node, aspect ratio kept (contain), clipped to the sticker, rotates with the center piece
+- [x] Default = no logo; removing the prop clears it
+- [x] Changing size/rotation is a cheap uniform update (image is not reloaded); load failures go to `onError`
+- [x] Demo: six color pickers + default colors, logo upload, sample logo, remove, size and rotation sliders
+- [x] Verify Phase 6 locally (custom colors, logo upload/remove, size/rotation, logo stays on the white center) - confirmed
 
 ### Phase 7 - Polish
-- [ ] Cleanup / dispose on unmount
-- [ ] Tests for model (moves, state)
-- [ ] README + usage docs
-- [ ] Library build mode (publishable component)
+- [x] Cleanup / dispose on unmount reviewed (renderer, animator, interaction listeners, geometries, materials, placeholder and logo textures, observers)
+- [x] Unit tests (Vitest): move parser/formatter/scramble, facelet model (known R and U strings, equivalences like M = R L' x', round trips), validation (twist, flip, swap, counts). 24 tests; also run once outside the project with a stand-in runner
+- [x] README: install, quick start, props, ref handle, notation, state format, interaction, browser support, package setup, publishing
+- [x] Library build: `src/index.ts` public API, `vite.config.lib.ts` (ES module, react/three external), `tsconfig.lib.json` (type declarations), exports map and peer dependencies (snippet in README)
+- [ ] Verify Phase 7 locally: `pnpm test`, `pnpm build:lib`, `pnpm pack` and try the tarball in a scratch project - needs your confirmation
 
 ## Decisions (resolved)
 1. TypeScript
@@ -117,15 +121,22 @@ Built with Vite.
 3. WebGL2 fallback when WebGPU is unavailable, with an info notice shown
 4. Logo on the white center sticker only
 5. Speed prop in ms per move
-6. App component first (library packaging later)
+6. App component first, then library packaging (library build requested now, in Phase 7)
 7. Manual layer turning by drag: yes. Drag on the cube turns that layer; drag on the background rotates the whole cube freely.
 8. Whole-cube turn gesture: two-finger drag on touch; on desktop, holding Shift or Ctrl while dragging locks the drag to a whole-cube x/y/z turn.
 9. `state` format: 54-character facelet string in URFDLB order (confirmed).
+10. `getState()` / `onStateChange` ignore whole-cube rotations (x y z): the string always has standard centers, so it can be fed back into `state` (accepted with Phase 5).
+11. `moves` prop replays only when the sequence text changes (use `ref.play()` to replay the same one); a new sequence replaces anything still queued (accepted with Phase 5).
+12. Invalid `state` / `moves` props do not throw: they call `onError` (or log) and the cube is left as is (accepted with Phase 5).
+13. Logo shape: `logo` is a URL string or `{ src, scale (default 0.75 of the sticker), rotation (degrees, clockwise seen from the white face, default 0) }` (accepted with Phase 6).
+14. The logo is clipped to the white center sticker (accepted with Phase 6).
+15. `colors` takes any CSS color string; a missing face keeps its default (accepted with Phase 6).
+16. Publishable library build now: ES module only (three/webgpu is ESM-only), react and three as peer dependencies, no bundled three.
 
 ## Pending Decisions
-1. `getState()` / `onStateChange` ignore whole-cube rotations (x y z): the string always has standard centers, so it can be fed back into `state`. Unconfirmed.
-2. `moves` prop replays only when the sequence text changes (use `ref.play()` to replay the same one); a new sequence replaces anything still queued. Unconfirmed.
-3. Invalid `state` / `moves` props do not throw: they call `onError` (or log) and the cube is left as is. Unconfirmed.
+1. Final npm package name (placeholder: `react-rubiks-cube-webgpu`) and scope.
+2. License (not chosen yet; no `license` field is set).
+3. Peer range for three (`>=0.180.0`) and react (`>=18`).
 
 ## Progress Log
 - Planning: plan drafted, decisions resolved
@@ -136,4 +147,6 @@ Built with Vite.
 - Phase 4 round 2: new move table in `moves.ts` (axis + layers per symbol), animator reads it; core shrunk to 0.9; move buttons removed. Round 2 not yet confirmed.
 - Phase 4b: new `cubeInteraction.ts` owns pointer input (layer drag, background free rotation, modifier/two-finger whole-cube turn); `turnAnimator.ts` gets manual turn API + `onMoveEnd`; `dragControls.ts` now only does free rotation. Verified locally by user (feels natural).
 - Phase 5: pure `cubeState.ts` (facelet <-> pieces, validation, solvability), `sceneState.ts` bridge, props/handle/callbacks in `RubiksCube.tsx`, animator gets cancel/clearQueue/pause. Model logic tested with scripts; the browser side not yet run.
-- Phase 5 build fix: `pnpm build` failed with TS1294 (project tsconfig has `erasableSyntaxOnly`). Removed constructor parameter properties in `cubeInteraction.ts`, `dragControls.ts`, `turnAnimator.ts`. Rule from now on: no parameter properties, enums or namespaces.
+- Phase 5 build fix: `pnpm build` failed with TS1294 (project tsconfig has `erasableSyntaxOnly`). Removed constructor parameter properties in `cubeInteraction.ts`, `dragControls.ts`, `turnAnimator.ts`. Rule from now on: no parameter properties, enums or namespaces. Phase 5 verified by user.
+- Phase 6: `colors` and `logo` props; `stickerMaterial.ts` gets a logo texture node (placeholder + uniforms for on/off, size, rotation) so no shader rebuild; `constants.ts` gets `resolveColors`; demo gets color pickers and logo controls. Verified locally by user.
+- Phase 7: `src/index.ts` public API, `vite.config.lib.ts`, `tsconfig.lib.json`, Vitest tests (`moves.test.ts`, `cubeState.test.ts`), README with package.json snippet. Tests pass outside the project; library build not yet run.
