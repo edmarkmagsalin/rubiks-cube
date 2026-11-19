@@ -9,12 +9,10 @@ An interactive 3x3 Rubik's Cube React component rendered with Three.js `WebGPURe
 - Render any cube state, animate any move sequence
 - Custom sticker colors and a logo on the white center
 
-> The package name `react-rubiks-cube-webgpu` below is a placeholder. Rename it in `package.json` before publishing.
-
 ## Install
 
 ```bash
-pnpm add react-rubiks-cube-webgpu three
+pnpm add em-rubiks-cube three
 ```
 
 Peer dependencies: `react >= 18`, `three >= 0.180.0`. Your bundler must support `three/webgpu` and `three/tsl` (any recent Vite, webpack 5 or Next.js setup does). The component renders in the browser only (use a client component / dynamic import with SSR frameworks).
@@ -23,7 +21,7 @@ Peer dependencies: `react >= 18`, `three >= 0.180.0`. Your bundler must support 
 
 ```tsx
 import { useRef } from 'react';
-import { RubiksCube, type RubiksCubeHandle } from 'react-rubiks-cube-webgpu';
+import { RubiksCube, type RubiksCubeHandle } from 'em-rubiks-cube';
 
 export function Demo() {
   const cube = useRef<RubiksCubeHandle>(null);
@@ -130,6 +128,7 @@ Merge these fields into `package.json` (and move `react`, `react-dom`, `three` a
   "name": "em-rubiks-cube",
   "private": false,
   "version": "0.1.0",
+  "license": "MIT",
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.js",
@@ -150,7 +149,11 @@ Merge these fields into `package.json` (and move `react`, `react-dom`, `three` a
 
 ## Publishing
 
-1. Choose the final package name, add `license`, `repository` and `keywords` to `package.json`.
+1. Add `repository`, `keywords` and `author` to `package.json` (name and license are already set).
 2. `pnpm test && pnpm build:lib`
 3. `pnpm pack` and install the tarball in a scratch project to try it.
 4. `pnpm publish --access public` (scoped packages need `--access public`).
+
+## License
+
+MIT. See [LICENSE](./LICENSE).

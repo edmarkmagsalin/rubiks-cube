@@ -132,11 +132,12 @@ Built with Vite.
 14. The logo is clipped to the white center sticker (accepted with Phase 6).
 15. `colors` takes any CSS color string; a missing face keeps its default (accepted with Phase 6).
 16. Publishable library build now: ES module only (three/webgpu is ESM-only), react and three as peer dependencies, no bundled three.
+17. Package name: `em-rubiks-cube`.
+18. License: MIT (`LICENSE` file added, `license` field in the package.json snippet).
+19. Peer ranges: `three >=0.180.0`, `react >=18` (confirmed).
 
 ## Pending Decisions
-1. Final npm package name (placeholder: `react-rubiks-cube-webgpu`) and scope.
-2. License (not chosen yet; no `license` field is set).
-3. Peer range for three (`>=0.180.0`) and react (`>=18`).
+None open. Waiting only for your Phase 7 verification (see Phase 7).
 
 ## Progress Log
 - Planning: plan drafted, decisions resolved
@@ -150,3 +151,4 @@ Built with Vite.
 - Phase 5 build fix: `pnpm build` failed with TS1294 (project tsconfig has `erasableSyntaxOnly`). Removed constructor parameter properties in `cubeInteraction.ts`, `dragControls.ts`, `turnAnimator.ts`. Rule from now on: no parameter properties, enums or namespaces. Phase 5 verified by user.
 - Phase 6: `colors` and `logo` props; `stickerMaterial.ts` gets a logo texture node (placeholder + uniforms for on/off, size, rotation) so no shader rebuild; `constants.ts` gets `resolveColors`; demo gets color pickers and logo controls. Verified locally by user.
 - Phase 7: `src/index.ts` public API, `vite.config.lib.ts`, `tsconfig.lib.json`, Vitest tests (`moves.test.ts`, `cubeState.test.ts`), README with package.json snippet. Tests pass outside the project; library build not yet run.
+- Phase 7 follow-up: package name set to `em-rubiks-cube`, MIT license (`LICENSE` added, README updated).
