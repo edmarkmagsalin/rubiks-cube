@@ -12,7 +12,7 @@ An interactive 3x3 Rubik's Cube React component rendered with Three.js `WebGPURe
 ## Install
 
 ```bash
-pnpm add em-rubiks-cube three
+pnpm add @edmarkmagsalin/rubiks-cube three
 ```
 
 Peer dependencies: `react >= 18`, `three >= 0.180.0`. Your bundler must support `three/webgpu` and `three/tsl` (any recent Vite, webpack 5 or Next.js setup does). The component renders in the browser only (use a client component / dynamic import with SSR frameworks).
@@ -21,7 +21,7 @@ Peer dependencies: `react >= 18`, `three >= 0.180.0`. Your bundler must support 
 
 ```tsx
 import { useRef } from 'react';
-import { RubiksCube, type RubiksCubeHandle } from 'em-rubiks-cube';
+import { RubiksCube, type RubiksCubeHandle } from '@edmarkmagsalin/rubiks-cube';
 
 export function Demo() {
   const cube = useRef<RubiksCubeHandle>(null);
@@ -125,7 +125,7 @@ Merge these fields into `package.json` (and move `react`, `react-dom`, `three` a
 
 ```json
 {
-  "name": "em-rubiks-cube",
+  "name": "@edmarkmagsalin/rubiks-cube",
   "private": false,
   "version": "0.1.0",
   "license": "MIT",

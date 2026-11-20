@@ -113,7 +113,7 @@ Built with Vite.
 - [x] Unit tests (Vitest): move parser/formatter/scramble, facelet model (known R and U strings, equivalences like M = R L' x', round trips), validation (twist, flip, swap, counts). 24 tests; also run once outside the project with a stand-in runner
 - [x] README: install, quick start, props, ref handle, notation, state format, interaction, browser support, package setup, publishing
 - [x] Library build: `src/index.ts` public API, `vite.config.lib.ts` (ES module, react/three external), `tsconfig.lib.json` (type declarations), exports map and peer dependencies (snippet in README)
-- [ ] Verify Phase 7 locally: `pnpm test`, `pnpm build:lib`, `pnpm pack` and try the tarball in a scratch project - needs your confirmation
+- [x] Verify Phase 7 locally: `pnpm test`, `pnpm build:lib`, `pnpm pack`, tarball in a scratch project - confirmed (all passed)
 
 ## Decisions (resolved)
 1. TypeScript
@@ -132,7 +132,7 @@ Built with Vite.
 14. The logo is clipped to the white center sticker (accepted with Phase 6).
 15. `colors` takes any CSS color string; a missing face keeps its default (accepted with Phase 6).
 16. Publishable library build now: ES module only (three/webgpu is ESM-only), react and three as peer dependencies, no bundled three.
-17. Package name: `em-rubiks-cube`.
+17. Package name: `@edmarkmagsalin/rubiks-cube` (the `em` npm org is taken; this uses the author's personal scope, replacing the earlier `em-rubiks-cube`). Publish with `--access public`.
 18. License: MIT (`LICENSE` file added, `license` field in the package.json snippet).
 19. Peer ranges: `three >=0.180.0`, `react >=18` (confirmed).
 
@@ -152,3 +152,5 @@ None open. Waiting only for your Phase 7 verification (see Phase 7).
 - Phase 6: `colors` and `logo` props; `stickerMaterial.ts` gets a logo texture node (placeholder + uniforms for on/off, size, rotation) so no shader rebuild; `constants.ts` gets `resolveColors`; demo gets color pickers and logo controls. Verified locally by user.
 - Phase 7: `src/index.ts` public API, `vite.config.lib.ts`, `tsconfig.lib.json`, Vitest tests (`moves.test.ts`, `cubeState.test.ts`), README with package.json snippet. Tests pass outside the project; library build not yet run.
 - Phase 7 follow-up: package name set to `em-rubiks-cube`, MIT license (`LICENSE` added, README updated).
+- Phase 7 verified by user: tests, library build, pack and scratch-project install all pass. `pnpm build` (demo app) only shows the Vite chunk-size warning (~1 MB, because the demo bundles three.js); the library build keeps three external, so the warning does not apply to the package. All phases done.
+- Package renamed to `@edmarkmagsalin/rubiks-cube` (README install, import and package.json snippet updated).

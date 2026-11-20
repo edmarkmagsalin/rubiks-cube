@@ -1,7 +1,32 @@
 {
-  "name": "em-rubiks-cube",
+  "name": "@edmarkmagsalin/rubiks-cube",
   "private": false,
   "version": "0.1.0",
+  "description": "Interactive 3x3 Rubik's Cube React component rendered with Three.js TSL on WebGPU, with automatic WebGL2 fallback.",
+  "keywords": [
+    "rubiks-cube",
+    "rubik",
+    "cube",
+    "puzzle",
+    "react",
+    "react-component",
+    "three",
+    "threejs",
+    "webgpu",
+    "webgl",
+    "tsl",
+    "3d"
+  ],
+  "homepage": "https://github.com/edmarkmagsalin/rubiks-cube#readme",
+  "bugs": {
+    "url": "https://github.com/edmarkmagsalin/rubiks-cube/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edmarkmagsalin/rubiks-cube.git"
+  },
+  "license": "MIT",
+  "author": "Edmark Magsalin",
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.js",
@@ -13,9 +38,13 @@
       "import": "./dist/index.js"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "peerDependencies": {
     "react": ">=18",
