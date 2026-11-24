@@ -120,11 +120,19 @@ Built with Vite.
 - [x] GitHub Actions workflow `.github/workflows/ci.yml`: on push to main and pull requests; install (frozen lockfile), `pnpm test`, `pnpm build` (type-check + demo), `pnpm build:lib`, check `dist/index.js` and `dist/index.d.ts` exist, `npm pack --dry-run`
 - [x] `CHANGELOG.md` (Keep a Changelog format, SemVer) with the 0.1.0 release notes and an Unreleased section
 - [x] README: npm and CI badges, link to the changelog
-- [ ] Verify Phase 8: push, confirm the workflow runs green on GitHub, tag `v0.1.0` - needs your confirmation
+- [x] CI runtime confirmed (Node 24, pnpm 10); `pnpm lint` (oxlint) added to CI
+- [x] Release workflow `.github/workflows/release.yml`: on `v*` tags, checks the tag matches `package.json`, lint, test, build, `npm publish --provenance` (npm trusted publishing, no stored token), then creates the GitHub release from the CHANGELOG entry
+- [x] README: Releasing section (one-time Trusted Publisher setup + release steps)
+- [ ] Verify Phase 8: CI run is green on GitHub; set up the Trusted Publisher on npmjs.com; try the release flow with the next version tag - needs your confirmation
 
-### Phase 9 - Optional extras (not started)
-- [ ] Solver hook (scope to be decided)
-- [ ] Sound effects (scope to be decided)
+### Phase 9 - Sound effects
+- [x] `sound` prop (default false) and `volume` prop (0 to 1, default 0.5): one click per finished move, played or dragged
+- [x] Synthesized with the Web Audio API (noise tick + low thock), no audio files; lazy AudioContext, throttled for fast sequences, safe no-op when blocked or unavailable
+- [x] Demo: sound on/off button and volume slider; README and CHANGELOG (Unreleased) updated
+- [ ] Verify Phase 9: click on played moves, dragged turns and scrambles; volume slider; off by default; no sound errors in the console - needs your confirmation
+
+### Phase 10 - Solver hook (to be discussed)
+- [ ] Scope, algorithm and bundle size to be decided with the user
 
 ## Decisions (resolved)
 1. TypeScript
@@ -146,12 +154,14 @@ Built with Vite.
 17. Package name: `@edmarkmagsalin/rubiks-cube` (the `em` npm org is taken; this uses the author's personal scope, replacing the earlier `em-rubiks-cube`). Publish with `--access public`.
 18. License: MIT (`LICENSE` file added, `license` field in the package.json snippet).
 19. Peer ranges: `three >=0.180.0`, `react >=18` (confirmed).
+20. CI runtime: Node 24 and pnpm 10; lint is enforced in CI (confirmed).
+21. Automate publishing on version tags (confirmed).
+22. Sound effects: a click per turn with a volume prop and an on/off switch (confirmed). Solver hook is done last and discussed first.
 
 ## Pending Decisions
-1. CI runtime: Node 24 and pnpm 10 (the repo has no `packageManager` field; adding one lets you drop the pnpm `version` from the workflow). Unconfirmed.
-2. CI does not run `pnpm lint` (oxlint) yet. Add it if you want it enforced. Unconfirmed.
-3. Releases stay manual (`pnpm publish`); automated publishing on tags is not set up. Unconfirmed.
-4. Phase 9 scope: what the solver hook and sound effects should do. Unconfirmed.
+1. Solver hook: what it should do, which algorithm and the bundle size cost (to discuss in the next phase).
+2. Sound: off by default (the `sound` prop is opt-in), volume 0.5, one synthesized click when a move finishes, no audio files. Unconfirmed.
+3. Release flow: npm trusted publishing (OIDC) with provenance on `v*` tags, which needs a one-time Trusted Publisher setup on npmjs.com. Unconfirmed.
 
 ## Progress Log
 - Planning: plan drafted, decisions resolved
@@ -170,3 +180,5 @@ Built with Vite.
 - Package renamed to `@edmarkmagsalin/rubiks-cube` (README install, import and package.json snippet updated).
 - Published v0.1.0 to npm.
 - Phase 8: `.github/workflows/ci.yml`, `CHANGELOG.md`, README badges and changelog link. Not yet run on GitHub.
+- Phase 8 follow-up: lint added to CI; `release.yml` (publish on tags with npm trusted publishing + GitHub release from the changelog); README Releasing section.
+- Phase 9: `src/core/sound.ts` (Web Audio click), `sound` / `volume` props, demo toggle and slider. Typechecked only; not yet run in a browser.

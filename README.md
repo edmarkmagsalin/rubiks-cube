@@ -53,6 +53,8 @@ export function Demo() {
 | `moves` | `string \| Move[]` | none | Moves to animate from the current state. Plays whenever the sequence changes (if `autoPlay`). A new sequence replaces anything still queued. |
 | `autoPlay` | `boolean` | `true` | Play `moves` automatically. Otherwise call `ref.play()`. |
 | `moveDuration` | `number` | `300` | Milliseconds per move. |
+| `sound` | `boolean` | `false` | Play a click when a move finishes (played or dragged). Synthesized with the Web Audio API, no audio files. Browsers only allow sound after the first user interaction on the page. |
+| `volume` | `number` | `0.5` | Click volume from 0 to 1. |
 | `colors` | `Partial<Record<'U'\|'R'\|'F'\|'D'\|'L'\|'B', string>>` | white, red, green, yellow, orange, blue | Sticker color per face. Any CSS color. Missing faces keep the default. |
 | `logo` | `string \| { src; scale?; rotation? } \| null` | none | Logo on the center sticker of the white (U) face. `scale` is the fraction of the sticker (default `0.75`), `rotation` is in degrees, clockwise as seen from the white face. Aspect ratio is kept. |
 | `onMoveStart` | `(move) => void` | | A queued move started turning. |
@@ -156,6 +158,15 @@ Merge these fields into `package.json` (and move `react`, `react-dom`, `three` a
 2. `pnpm test && pnpm build:lib`
 3. `pnpm pack` and install the tarball in a scratch project to try it.
 4. `pnpm publish --access public` (scoped packages need `--access public`).
+
+## Releasing
+
+One-time setup: on npmjs.com open the package, go to Settings, Trusted Publisher, choose GitHub Actions and enter owner `edmarkmagsalin`, repository `rubiks-cube`, workflow filename `release.yml`. No npm token is stored in GitHub.
+
+1. Move the `Unreleased` notes in `CHANGELOG.md` under the new version heading and bump `version` in `package.json`.
+2. Commit and push to `main` (wait for CI to be green).
+3. `git tag vX.Y.Z && git push --tags` (the tag must match `package.json`).
+4. The Release workflow lints, tests, builds, publishes to npm with provenance and creates the GitHub release from the changelog entry.
 
 ## Changelog
 

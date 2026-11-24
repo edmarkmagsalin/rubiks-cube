@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { Box, Cpu, Hand, Image as ImageIcon, Info, Palette, Pause, Play, RotateCcw, Shuffle, Upload, X } from 'lucide-react';
+import { Box, Cpu, Hand, Image as ImageIcon, Info, Palette, Pause, Play, RotateCcw, Shuffle, Upload, Volume2, VolumeX, X } from 'lucide-react';
 import { RubiksCube, type LogoOptions, type RubiksCubeHandle } from '../RubiksCube';
 import { DEFAULT_COLORS, FACES, type FaceColors } from '../core/constants';
 import type { BackendKind } from '../core/webgpu';
@@ -28,6 +28,8 @@ export function App() {
   const [logoSrc, setLogoSrc] = useState<string | null>(null);
   const [logoScale, setLogoScale] = useState(0.75);
   const [logoRotation, setLogoRotation] = useState(0);
+  const [soundOn, setSoundOn] = useState(false);
+  const [volume, setVolume] = useState(0.5);
 
   // Props demo: open the page with ?state=<54 letters>&moves=R U R' U' to render a state / play moves on load.
   const initial = useMemo(() => {
@@ -84,6 +86,8 @@ export function App() {
           state={initial.state}
           moves={initial.moves}
           moveDuration={duration}
+          sound={soundOn}
+          volume={volume}
           onBackendReady={setBackend}
           onMoveEnd={onMoveEnd}
           onStateChange={setCurrentState}
@@ -174,6 +178,16 @@ export function App() {
           <label className="row">
             <span>Rotate {logoRotation} deg</span>
             <input type="range" min={0} max={359} step={1} value={logoRotation} onChange={(e) => setLogoRotation(Number(e.target.value))} />
+          </label>
+        </div>
+
+        <div className="row">
+          <button aria-pressed={soundOn} onClick={() => setSoundOn(!soundOn)}>
+            {soundOn ? <Volume2 size={14} /> : <VolumeX size={14} />} Sound {soundOn ? 'on' : 'off'}
+          </button>
+          <label className="row">
+            <span>Volume {Math.round(volume * 100)}%</span>
+            <input type="range" min={0} max={1} step={0.05} value={volume} disabled={!soundOn} onChange={(e) => setVolume(Number(e.target.value))} />
           </label>
         </div>
 

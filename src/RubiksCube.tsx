@@ -10,6 +10,7 @@ import { TurnAnimator, type MoveSource } from './core/turnAnimator';
 import { formatMoves, parseMoves, type Move } from './core/moves';
 import { SOLVED_STATE, validateState } from './core/cubeState';
 import { applyState, readState } from './core/sceneState';
+import { TurnSound } from './core/sound';
 import { FACES, resolveColors, type FaceColors } from './core/constants';
 
 export interface LogoOptions {
@@ -53,6 +54,10 @@ export interface RubiksCubeProps {
   autoPlay?: boolean;
   /** Milliseconds per move. Default 300. */
   moveDuration?: number;
+  /** Play a click when a move finishes (played or dragged). Default false (opt-in). */
+  sound?: boolean;
+  /** Click volume from 0 to 1. Default 0.5. */
+  volume?: number;
   /** Renderer ready: backend actually in use ('webgpu' or the 'webgl2' fallback). */
   onBackendReady?: (backend: BackendKind) => void;
   /** A queued (API) move started turning. */
@@ -104,6 +109,8 @@ export const RubiksCube = forwardRef<RubiksCubeHandle, RubiksCubeProps>(function
     moves,
     autoPlay = true,
     moveDuration = 300,
+    sound = false,
+    volume = 0.5,
     onBackendReady,
     onMoveStart,
     onMoveEnd,
@@ -120,8 +127,8 @@ export const RubiksCube = forwardRef<RubiksCubeHandle, RubiksCubeProps>(function
   const stateRef = useRef(SOLVED_STATE);
 
   // Latest props for use inside long-lived callbacks.
-  const live = useRef({ colors, logo, state, moves, moveDuration, onBackendReady, onMoveStart, onMoveEnd, onSequenceEnd, onStateChange, onError });
-  live.current = { colors, logo, state, moves, moveDuration, onBackendReady, onMoveStart, onMoveEnd, onSequenceEnd, onStateChange, onError };
+  const live = useRef({ colors, logo, state, moves, moveDuration, sound, volume, onBackendReady, onMoveStart, onMoveEnd, onSequenceEnd, onStateChange, onError });
+  live.current = { colors, logo, state, moves, moveDuration, sound, volume, onBackendReady, onMoveStart, onMoveEnd, onSequenceEnd, onStateChange, onError };
 
   const report = (err: unknown) => {
     const error = err instanceof Error ? err : new Error(String(err));
@@ -195,8 +202,10 @@ export const RubiksCube = forwardRef<RubiksCubeHandle, RubiksCubeProps>(function
 
     const animator = new TurnAnimator(cube, live.current.moveDuration);
     animatorRef.current = animator;
+    const turnSound = new TurnSound();
     animator.onMoveStart = (move) => live.current.onMoveStart?.(move);
     animator.onMoveEnd = (move, source) => {
+      if (live.current.sound) turnSound.click(live.current.volume ?? 0.5);
       live.current.onMoveEnd?.(move, source);
       stateRef.current = readState(cube);
       live.current.onStateChange?.(stateRef.current);
@@ -261,6 +270,7 @@ export const RubiksCube = forwardRef<RubiksCubeHandle, RubiksCubeProps>(function
       unwatchDpr?.();
       interaction.dispose();
       animator.dispose();
+      turnSound.dispose();
       animatorRef.current = null;
       cubeRef.current = null;
       if (renderer) {
