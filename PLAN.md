@@ -114,6 +114,17 @@ Built with Vite.
 - [x] README: install, quick start, props, ref handle, notation, state format, interaction, browser support, package setup, publishing
 - [x] Library build: `src/index.ts` public API, `vite.config.lib.ts` (ES module, react/three external), `tsconfig.lib.json` (type declarations), exports map and peer dependencies (snippet in README)
 - [x] Verify Phase 7 locally: `pnpm test`, `pnpm build:lib`, `pnpm pack`, tarball in a scratch project - confirmed (all passed)
+- [x] Published to npm: https://www.npmjs.com/package/@edmarkmagsalin/rubiks-cube (v0.1.0)
+
+### Phase 8 - CI and changelog
+- [x] GitHub Actions workflow `.github/workflows/ci.yml`: on push to main and pull requests; install (frozen lockfile), `pnpm test`, `pnpm build` (type-check + demo), `pnpm build:lib`, check `dist/index.js` and `dist/index.d.ts` exist, `npm pack --dry-run`
+- [x] `CHANGELOG.md` (Keep a Changelog format, SemVer) with the 0.1.0 release notes and an Unreleased section
+- [x] README: npm and CI badges, link to the changelog
+- [ ] Verify Phase 8: push, confirm the workflow runs green on GitHub, tag `v0.1.0` - needs your confirmation
+
+### Phase 9 - Optional extras (not started)
+- [ ] Solver hook (scope to be decided)
+- [ ] Sound effects (scope to be decided)
 
 ## Decisions (resolved)
 1. TypeScript
@@ -137,7 +148,10 @@ Built with Vite.
 19. Peer ranges: `three >=0.180.0`, `react >=18` (confirmed).
 
 ## Pending Decisions
-None open. Waiting only for your Phase 7 verification (see Phase 7).
+1. CI runtime: Node 24 and pnpm 10 (the repo has no `packageManager` field; adding one lets you drop the pnpm `version` from the workflow). Unconfirmed.
+2. CI does not run `pnpm lint` (oxlint) yet. Add it if you want it enforced. Unconfirmed.
+3. Releases stay manual (`pnpm publish`); automated publishing on tags is not set up. Unconfirmed.
+4. Phase 9 scope: what the solver hook and sound effects should do. Unconfirmed.
 
 ## Progress Log
 - Planning: plan drafted, decisions resolved
@@ -154,3 +168,5 @@ None open. Waiting only for your Phase 7 verification (see Phase 7).
 - Phase 7 follow-up: package name set to `em-rubiks-cube`, MIT license (`LICENSE` added, README updated).
 - Phase 7 verified by user: tests, library build, pack and scratch-project install all pass. `pnpm build` (demo app) only shows the Vite chunk-size warning (~1 MB, because the demo bundles three.js); the library build keeps three external, so the warning does not apply to the package. All phases done.
 - Package renamed to `@edmarkmagsalin/rubiks-cube` (README install, import and package.json snippet updated).
+- Published v0.1.0 to npm.
+- Phase 8: `.github/workflows/ci.yml`, `CHANGELOG.md`, README badges and changelog link. Not yet run on GitHub.

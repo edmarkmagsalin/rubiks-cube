@@ -1,5 +1,8 @@
 # Rubik's Cube for React (Three.js TSL, WebGPU)
 
+[![npm](https://img.shields.io/npm/v/@edmarkmagsalin/rubiks-cube)](https://www.npmjs.com/package/@edmarkmagsalin/rubiks-cube)
+[![CI](https://github.com/edmarkmagsalin/rubiks-cube/actions/workflows/ci.yml/badge.svg)](https://github.com/edmarkmagsalin/rubiks-cube/actions/workflows/ci.yml)
+
 An interactive 3x3 Rubik's Cube React component rendered with Three.js `WebGPURenderer` and Three Shading Language (TSL). It uses WebGPU and falls back to WebGL2 automatically.
 
 - Drag or swipe to inspect the cube from every angle
@@ -153,6 +156,10 @@ Merge these fields into `package.json` (and move `react`, `react-dom`, `three` a
 2. `pnpm test && pnpm build:lib`
 3. `pnpm pack` and install the tarball in a scratch project to try it.
 4. `pnpm publish --access public` (scoped packages need `--access public`).
+
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md).
 
 ## License
 

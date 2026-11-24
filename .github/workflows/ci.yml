@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      # pnpm must be set up before setup-node so the pnpm cache works.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Type-check and build the demo app
+        run: pnpm build
+
+      # Runs last: the library build empties dist/ and writes the package files.
+      - name: Build the library
+        run: pnpm build:lib
+
+      - name: Check the package contents
+        run: |
+          test -f dist/index.js
+          test -f dist/index.d.ts
+          npm pack --dry-run
