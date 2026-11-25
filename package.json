@@ -1,7 +1,7 @@
 {
   "name": "@edmarkmagsalin/rubiks-cube",
   "private": false,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Interactive 3x3 Rubik's Cube React component rendered with Three.js TSL on WebGPU, with automatic WebGL2 fallback.",
   "keywords": [
     "rubiks-cube",
