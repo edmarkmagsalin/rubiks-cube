@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-25
+
+### Changed
+
+- The turn sound is now a recorded sample (embedded in the package, no files to host) instead of a synthesized click. It decodes instantly, so hits stay in time with very fast turns, and rapid turns overlap cleanly.
+
+## [0.2.0] - 2026-11-25
+
 ### Added
 
 - `sound` and `volume` props: an optional click when a move finishes, played or dragged (off by default; synthesized with the Web Audio API, no audio files).
@@ -29,5 +37,7 @@ First public release.
 - Helpers: `parseMoves`, `formatMove`, `formatMoves`, `randomScramble`, `validateState`, `isWebGPUAvailable`, `SOLVED_STATE`, `DEFAULT_COLORS`, `FACES`.
 - ES module build with TypeScript declarations. Peer dependencies: `react >= 18`, `three >= 0.180.0`.
 
-[Unreleased]: https://github.com/edmarkmagsalin/rubiks-cube/commits/main
+[Unreleased]: https://github.com/edmarkmagsalin/rubiks-cube/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/edmarkmagsalin/rubiks-cube/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/edmarkmagsalin/rubiks-cube/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/edmarkmagsalin/rubiks-cube/releases/tag/v0.1.0

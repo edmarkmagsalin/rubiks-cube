@@ -136,7 +136,9 @@ Built with Vite.
 - [x] Format: 16-bit mono 48 kHz WAV embedded as base64 (13.9 KB). Chosen over AAC / MP3 / Opus (2-3.5 KB) because it decodes instantly and has no encoder delay, so a hit lands exactly when a turn finishes, even at very fast speeds
 - [x] Playback: decoded once, every hit is its own buffer source so fast turns overlap cleanly; tiny pitch/volume variation, max 8 overlapping voices, 12 ms minimum gap, gentle limiter against clipping; silent until the user has interacted with the page
 - [x] `assets/turn.wav` is the source; `node scripts/embed-sound.mjs` regenerates `src/core/turnSoundData.ts`; a unit test checks the embedded WAV
-- [ ] Verify Phase 9b: the sound matches the recording at slow and very fast speeds; then release as v0.2.1 - needs your confirmation
+- [x] Verify Phase 9b: the sound matches the recording - confirmed
+- [x] CHANGELOG fixed: it still had the sound entry under Unreleased and no 0.2.0 section; added `[0.2.1]` (recorded sample) and `[0.2.0]` (sound props), emptied Unreleased, updated the compare links
+- [ ] Release v0.2.1 (version bump, commit, push, tag) - needs your action
 
 ### Phase 10 - Solver hook (to be discussed)
 - [ ] Scope, algorithm and bundle size to be decided with the user
@@ -190,4 +192,5 @@ Built with Vite.
 - Phase 8: `.github/workflows/ci.yml`, `CHANGELOG.md`, README badges and changelog link. Not yet run on GitHub.
 - Phase 8 follow-up: lint added to CI; `release.yml` (publish on tags with npm trusted publishing + GitHub release from the changelog); README Releasing section.
 - Phase 9: `src/core/sound.ts` (Web Audio click), `sound` / `volume` props, demo toggle and slider. Verified locally by user.
-- Phase 9b: `sound.ts` now plays the recorded sample (`assets/turn.wav` embedded via `turnSoundData.ts`); prepare-on-switch-on, overlapping voices, limiter. Not yet run in a browser.
+- Phase 9b: `sound.ts` now plays the recorded sample (`assets/turn.wav` embedded via `turnSoundData.ts`); prepare-on-switch-on, overlapping voices, limiter. Verified locally by user.
+- CHANGELOG: 0.2.0 and 0.2.1 sections added, Unreleased emptied (the v0.2.0 GitHub release notes fell back to "See CHANGELOG.md" because that section was missing).
