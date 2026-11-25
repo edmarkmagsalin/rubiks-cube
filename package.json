@@ -1,7 +1,7 @@
 {
   "name": "@edmarkmagsalin/rubiks-cube",
   "private": false,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Interactive 3x3 Rubik's Cube React component rendered with Three.js TSL on WebGPU, with automatic WebGL2 fallback.",
   "keywords": [
     "rubiks-cube",
@@ -60,10 +60,6 @@
     "prepublishOnly": "pnpm test && pnpm build:lib"
   },
   "devDependencies": {
-    "lucide-react": "^1.73.0",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "three": "^0.187.0",
     "@babel/core": "^7.29.7",
     "@rolldown/plugin-babel": "^0.3.0",
     "@types/babel__core": "^7.20.5",
@@ -73,7 +69,11 @@
     "@types/three": "^0.187.0",
     "@vitejs/plugin-react": "^6.1.2",
     "babel-plugin-react-compiler": "^1.0.0",
+    "lucide-react": "^1.73.0",
     "oxlint": "^1.90.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "three": "^0.187.0",
     "typescript": "~7.0.2",
     "vite": "^8.3.6",
     "vitest": "^5.1.1"
