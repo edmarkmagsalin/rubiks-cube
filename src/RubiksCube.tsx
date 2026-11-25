@@ -54,9 +54,9 @@ export interface RubiksCubeProps {
   autoPlay?: boolean;
   /** Milliseconds per move. Default 300. */
   moveDuration?: number;
-  /** Play a click when a move finishes (played or dragged). Default false (opt-in). */
+  /** Play the turn sound when a move finishes (played or dragged). Default false (opt-in). */
   sound?: boolean;
-  /** Click volume from 0 to 1. Default 0.5. */
+  /** Turn sound volume from 0 to 1. Default 0.5. */
   volume?: number;
   /** Renderer ready: backend actually in use ('webgpu' or the 'webgl2' fallback). */
   onBackendReady?: (backend: BackendKind) => void;
@@ -125,6 +125,7 @@ export const RubiksCube = forwardRef<RubiksCubeHandle, RubiksCubeProps>(function
   const cubeRef = useRef<CubeObject | null>(null);
   const animatorRef = useRef<TurnAnimator | null>(null);
   const stateRef = useRef(SOLVED_STATE);
+  const soundRef = useRef<TurnSound | null>(null);
 
   // Latest props for use inside long-lived callbacks.
   const live = useRef({ colors, logo, state, moves, moveDuration, sound, volume, onBackendReady, onMoveStart, onMoveEnd, onSequenceEnd, onStateChange, onError });
@@ -203,6 +204,7 @@ export const RubiksCube = forwardRef<RubiksCubeHandle, RubiksCubeProps>(function
     const animator = new TurnAnimator(cube, live.current.moveDuration);
     animatorRef.current = animator;
     const turnSound = new TurnSound();
+    soundRef.current = turnSound;
     animator.onMoveStart = (move) => live.current.onMoveStart?.(move);
     animator.onMoveEnd = (move, source) => {
       if (live.current.sound) turnSound.click(live.current.volume ?? 0.5);
@@ -271,6 +273,7 @@ export const RubiksCube = forwardRef<RubiksCubeHandle, RubiksCubeProps>(function
       interaction.dispose();
       animator.dispose();
       turnSound.dispose();
+      soundRef.current = null;
       animatorRef.current = null;
       cubeRef.current = null;
       if (renderer) {
@@ -286,6 +289,11 @@ export const RubiksCube = forwardRef<RubiksCubeHandle, RubiksCubeProps>(function
   useEffect(() => {
     if (moveDuration !== undefined && animatorRef.current) animatorRef.current.defaultDuration = moveDuration;
   }, [moveDuration]);
+
+  // `sound` switched on: decode the sample ahead of the first turn.
+  useEffect(() => {
+    if (sound) soundRef.current?.prepare();
+  }, [sound]);
 
   // `colors` prop changed: uniform update, no rebuild.
   const colorsKey = FACES.map((f) => colors?.[f] ?? '').join('|');

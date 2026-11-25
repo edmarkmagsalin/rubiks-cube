@@ -53,8 +53,8 @@ export function Demo() {
 | `moves` | `string \| Move[]` | none | Moves to animate from the current state. Plays whenever the sequence changes (if `autoPlay`). A new sequence replaces anything still queued. |
 | `autoPlay` | `boolean` | `true` | Play `moves` automatically. Otherwise call `ref.play()`. |
 | `moveDuration` | `number` | `300` | Milliseconds per move. |
-| `sound` | `boolean` | `false` | Play a click when a move finishes (played or dragged). Synthesized with the Web Audio API, no audio files. Browsers only allow sound after the first user interaction on the page. |
-| `volume` | `number` | `0.5` | Click volume from 0 to 1. |
+| `sound` | `boolean` | `false` | Play the turn sound when a move finishes (played or dragged). A short recorded sample is embedded in the package (no files to host) and plays through the Web Audio API, so fast turns overlap cleanly. Browsers only allow sound after the first user interaction on the page. |
+| `volume` | `number` | `0.5` | Turn sound volume from 0 to 1. |
 | `colors` | `Partial<Record<'U'\|'R'\|'F'\|'D'\|'L'\|'B', string>>` | white, red, green, yellow, orange, blue | Sticker color per face. Any CSS color. Missing faces keep the default. |
 | `logo` | `string \| { src; scale?; rotation? } \| null` | none | Logo on the center sticker of the white (U) face. `scale` is the fraction of the sticker (default `0.75`), `rotation` is in degrees, clockwise as seen from the white face. Aspect ratio is kept. |
 | `onMoveStart` | `(move) => void` | | A queued move started turning. |

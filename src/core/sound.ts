@@ -1,72 +1,103 @@
+import { TURN_SOUND_WAV_BASE64 } from './turnSoundData';
+
 type AudioContextCtor = typeof AudioContext;
 
 const clamp01 = (n: number): number => (Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0);
 
+/** Never start more than this many overlapping hits (keeps very fast sequences clean). */
+const MAX_VOICES = 8;
+/** Minimum time between two hits, in milliseconds. */
+const MIN_GAP_MS = 12;
+
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer as ArrayBuffer;
+}
+
 /**
- * A small synthesized "click" for finished turns (no audio files to ship).
- * Browser only: the AudioContext is created lazily on the first click, and
- * everything is a silent no-op when audio is unavailable or still blocked by
- * the browser's autoplay policy (it unlocks after the first user gesture).
+ * Plays the recorded turn sound (a short WAV embedded in the package) when a move
+ * finishes. Every hit is its own short-lived buffer source, so fast turns overlap
+ * cleanly instead of cutting each other off. Browser only, and a silent no-op when
+ * audio is unavailable or the browser has not allowed sound yet (it unlocks after
+ * the first user interaction with the page).
  */
 export class TurnSound {
   private ctx: AudioContext | null = null;
-  private noise: AudioBuffer | null = null;
+  private master: DynamicsCompressorNode | null = null;
+  private buffer: AudioBuffer | null = null;
+  private loading = false;
   private failed = false;
+  private voices = 0;
   private lastAt = 0;
 
-  /** Play one click. `volume` is 0..1. */
-  click(volume: number): void {
-    const v = clamp01(volume);
-    if (v <= 0) return;
-
-    const now = performance.now();
-    if (now - this.lastAt < 30) return; // keep fast sequences from piling up
+  /** Create the audio context and decode the sample ahead of the first hit. */
+  prepare(): void {
+    if (this.buffer || this.loading || this.failed || !this.allowed()) return;
     const ctx = this.context();
     if (!ctx) return;
+    this.loading = true;
+    ctx
+      .decodeAudioData(base64ToArrayBuffer(TURN_SOUND_WAV_BASE64))
+      .then((decoded) => {
+        this.buffer = decoded;
+      })
+      .catch(() => {
+        this.failed = true;
+      })
+      .finally(() => {
+        this.loading = false;
+      });
+  }
+
+  /** Play one hit. `volume` is 0..1. */
+  click(volume: number): void {
+    const v = clamp01(volume);
+    if (v <= 0 || this.failed || !this.allowed()) return;
+
+    const now = performance.now();
+    if (now - this.lastAt < MIN_GAP_MS || this.voices >= MAX_VOICES) return;
+
+    const ctx = this.context();
+    if (!ctx) return;
+    if (!this.buffer) {
+      this.prepare(); // normally done earlier; the very first hit is skipped while decoding
+      return;
+    }
     this.lastAt = now;
     if (ctx.state === 'suspended') void ctx.resume();
 
-    const t = ctx.currentTime;
-    const out = ctx.createGain();
-    out.gain.value = v;
-    out.connect(ctx.destination);
-
-    // Plastic "tick": a very short, band-passed noise burst.
     const src = ctx.createBufferSource();
-    src.buffer = this.noiseBuffer(ctx);
-    src.playbackRate.value = 0.9 + Math.random() * 0.25;
-    const band = ctx.createBiquadFilter();
-    band.type = 'bandpass';
-    band.frequency.value = 1800 + Math.random() * 900;
-    band.Q.value = 0.9;
-    const tick = ctx.createGain();
-    tick.gain.setValueAtTime(0.9, t);
-    tick.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
-    src.connect(band);
-    band.connect(tick);
-    tick.connect(out);
-    src.start(t);
-    src.stop(t + 0.06);
+    src.buffer = this.buffer;
+    src.playbackRate.value = 0.96 + Math.random() * 0.08; // tiny variation: rapid turns never sound identical
+    const gain = ctx.createGain();
+    gain.gain.value = v * (0.9 + Math.random() * 0.1);
+    src.connect(gain);
+    gain.connect(this.output(ctx));
 
-    // Low "thock" for the body of the cube.
-    const osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(170, t);
-    osc.frequency.exponentialRampToValueAtTime(70, t + 0.05);
-    const thock = ctx.createGain();
-    thock.gain.setValueAtTime(0.5, t);
-    thock.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
-    osc.connect(thock);
-    thock.connect(out);
-    osc.start(t);
-    osc.stop(t + 0.08);
+    this.voices++;
+    src.onended = () => {
+      this.voices--;
+      src.disconnect();
+      gain.disconnect();
+    };
+    src.start();
   }
 
   dispose(): void {
     const ctx = this.ctx;
     this.ctx = null;
-    this.noise = null;
+    this.master = null;
+    this.buffer = null;
     if (ctx && ctx.state !== 'closed') void ctx.close();
+  }
+
+  /** Browsers only allow sound after the user has interacted with the page. */
+  private allowed(): boolean {
+    if (typeof window === 'undefined') return false;
+    const activation = navigator.userActivation;
+    return !activation || activation.hasBeenActive;
   }
 
   private context(): AudioContext | null {
@@ -86,13 +117,17 @@ export class TurnSound {
     return this.ctx;
   }
 
-  private noiseBuffer(ctx: AudioContext): AudioBuffer {
-    if (this.noise) return this.noise;
-    const length = Math.floor(ctx.sampleRate * 0.05);
-    const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
-    this.noise = buffer;
-    return buffer;
+  /** A gentle limiter so many overlapping hits never clip. */
+  private output(ctx: AudioContext): AudioNode {
+    if (this.master) return this.master;
+    const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -6;
+    limiter.knee.value = 6;
+    limiter.ratio.value = 12;
+    limiter.attack.value = 0.002;
+    limiter.release.value = 0.1;
+    limiter.connect(ctx.destination);
+    this.master = limiter;
+    return limiter;
   }
 }

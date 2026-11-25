@@ -123,13 +123,20 @@ Built with Vite.
 - [x] CI runtime confirmed (Node 24, pnpm 10); `pnpm lint` (oxlint) added to CI
 - [x] Release workflow `.github/workflows/release.yml`: on `v*` tags, checks the tag matches `package.json`, lint, test, build, `npm publish --provenance` (npm trusted publishing, no stored token), then creates the GitHub release from the CHANGELOG entry
 - [x] README: Releasing section (one-time Trusted Publisher setup + release steps)
-- [ ] Verify Phase 8: CI run is green on GitHub; set up the Trusted Publisher on npmjs.com; try the release flow with the next version tag - needs your confirmation
+- [x] Verify Phase 8: CI is green, the Release workflow ran end to end (lint, tests, build, npm publish, GitHub release), v0.2.0 published - confirmed
 
 ### Phase 9 - Sound effects
 - [x] `sound` prop (default false) and `volume` prop (0 to 1, default 0.5): one click per finished move, played or dragged
 - [x] Synthesized with the Web Audio API (noise tick + low thock), no audio files; lazy AudioContext, throttled for fast sequences, safe no-op when blocked or unavailable
 - [x] Demo: sound on/off button and volume slider; README and CHANGELOG (Unreleased) updated
-- [ ] Verify Phase 9: click on played moves, dragged turns and scrambles; volume slider; off by default; no sound errors in the console - needs your confirmation
+- [x] Verify Phase 9: click on played moves, dragged turns and scrambles; volume slider; off by default - confirmed
+
+### Phase 9b - Recorded turn sound (v0.2.1)
+- [x] The synthesized click is replaced by the user's recording (`turn.m4a`): stereo to mono, 40 Hz high-pass, trimmed to 144 ms (three hits at about 6, 25-31 and 108 ms), 2 ms fade-in, 30 ms fade-out, peak at -2 dBFS
+- [x] Format: 16-bit mono 48 kHz WAV embedded as base64 (13.9 KB). Chosen over AAC / MP3 / Opus (2-3.5 KB) because it decodes instantly and has no encoder delay, so a hit lands exactly when a turn finishes, even at very fast speeds
+- [x] Playback: decoded once, every hit is its own buffer source so fast turns overlap cleanly; tiny pitch/volume variation, max 8 overlapping voices, 12 ms minimum gap, gentle limiter against clipping; silent until the user has interacted with the page
+- [x] `assets/turn.wav` is the source; `node scripts/embed-sound.mjs` regenerates `src/core/turnSoundData.ts`; a unit test checks the embedded WAV
+- [ ] Verify Phase 9b: the sound matches the recording at slow and very fast speeds; then release as v0.2.1 - needs your confirmation
 
 ### Phase 10 - Solver hook (to be discussed)
 - [ ] Scope, algorithm and bundle size to be decided with the user
@@ -157,11 +164,12 @@ Built with Vite.
 20. CI runtime: Node 24 and pnpm 10; lint is enforced in CI (confirmed).
 21. Automate publishing on version tags (confirmed).
 22. Sound effects: a click per turn with a volume prop and an on/off switch (confirmed). Solver hook is done last and discussed first.
+23. Release flow: npm trusted publishing (OIDC) with provenance on `v*` tags (confirmed; v0.2.0 shipped through it).
+24. Turn sound: the user's own recording replaces the synthesized click; WAV embedded in the package (to ship as v0.2.1).
 
 ## Pending Decisions
 1. Solver hook: what it should do, which algorithm and the bundle size cost (to discuss in the next phase).
-2. Sound: off by default (the `sound` prop is opt-in), volume 0.5, one synthesized click when a move finishes, no audio files. Unconfirmed.
-3. Release flow: npm trusted publishing (OIDC) with provenance on `v*` tags, which needs a one-time Trusted Publisher setup on npmjs.com. Unconfirmed.
+2. Sound stays off by default (the `sound` prop is opt-in), volume 0.5. Unconfirmed.
 
 ## Progress Log
 - Planning: plan drafted, decisions resolved
@@ -181,4 +189,5 @@ Built with Vite.
 - Published v0.1.0 to npm.
 - Phase 8: `.github/workflows/ci.yml`, `CHANGELOG.md`, README badges and changelog link. Not yet run on GitHub.
 - Phase 8 follow-up: lint added to CI; `release.yml` (publish on tags with npm trusted publishing + GitHub release from the changelog); README Releasing section.
-- Phase 9: `src/core/sound.ts` (Web Audio click), `sound` / `volume` props, demo toggle and slider. Typechecked only; not yet run in a browser.
+- Phase 9: `src/core/sound.ts` (Web Audio click), `sound` / `volume` props, demo toggle and slider. Verified locally by user.
+- Phase 9b: `sound.ts` now plays the recorded sample (`assets/turn.wav` embedded via `turnSoundData.ts`); prepare-on-switch-on, overlapping voices, limiter. Not yet run in a browser.
