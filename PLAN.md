@@ -140,8 +140,38 @@ Built with Vite.
 - [x] CHANGELOG fixed: it still had the sound entry under Unreleased and no 0.2.0 section; added `[0.2.1]` (recorded sample) and `[0.2.0]` (sound props), emptied Unreleased, updated the compare links
 - [ ] Release v0.2.1 (version bump, commit, push, tag) - needs your action
 
-### Phase 10 - Solver hook (to be discussed)
-- [ ] Scope, algorithm and bundle size to be decided with the user
+### Phase 10 - Solver hook (discussion in progress)
+- [x] Options discussed: Kociemba two-phase (about 20 moves, needs lookup tables), beginner layer-by-layer (100+ moves, no tables), undo by reversing the move history (trivial, only for known histories), optimal search (not feasible in a browser)
+- [ ] Decide algorithm source, packaging, responsiveness and API shape (see Pending Decisions)
+- [ ] Build with tests (scramble, solve, replay the solution to reach the solved state; invalid states report the validation error)
+- [ ] Demo: a Solve button that solves from the current state and animates the result
+- [ ] Release (minor version, CHANGELOG entry)
+
+### Phase 11 - Demo UI/UX with shadcn (prototype first)
+Goal: a better demo page, built as a reusable demo shell that future package demos can share.
+- [ ] Step 1 - HTML prototype artifact (no repo code yet): layout, theme, dock, compact density; reviewed and approved before any coding
+- [ ] Step 2 - Install and configure shadcn/ui (Tailwind, path alias, components.json) without touching the library build
+- [ ] Step 3 - Build the reusable demo shell in `src/demo/shell/` (no imports from the cube package)
+- [ ] Step 4 - Move the current demo controls into the shell
+- [ ] Step 5 - Document the shell (how to reuse it in another package), then verify
+
+Features:
+- Theme: light / dark / system (system follows the OS; choice remembered; no flash on load)
+- Control panel: translucent (backdrop blur), expandable and collapsible, dockable left, right or bottom; default is bottom; dock and open state remembered
+- Compact controls: grouped sections in a multi-column grid; no long inputs or sliders (short fields, inline value labels, small swatches)
+- Narrow screens: the panel becomes a bottom sheet
+- Icons: Lucide (no emoji)
+
+Reuse plan:
+- The shell knows nothing about the cube: it provides slots for title/status badges, notices, the stage (children) and the control sections
+- Building blocks: `DemoShell`, `ThemeProvider` + `ThemeToggle`, `ControlPanel` (dock + expand), `ControlSection`, field helpers (slider, color, text with action, file, toggle, read-out)
+- Saved preferences are namespaced per package (storage key prefix) so several demos can coexist
+- Extraction options once a second package needs it: (a) copy the folder or a template repo, (b) publish as an npm package, (c) shadcn custom registry. Start inside this repo with a strict boundary and decide later
+
+Constraints:
+- The library build and package contents stay unchanged: demo code and Tailwind never enter `src/index.ts`, `vite.config.lib.ts` or `tsconfig.lib.json`
+- `erasableSyntaxOnly`, oxlint and CI stay green
+- Prototype artifact: link will be added here when it is created
 
 ## Decisions (resolved)
 1. TypeScript
@@ -168,10 +198,16 @@ Built with Vite.
 22. Sound effects: a click per turn with a volume prop and an on/off switch (confirmed). Solver hook is done last and discussed first.
 23. Release flow: npm trusted publishing (OIDC) with provenance on `v*` tags (confirmed; v0.2.0 shipped through it).
 24. Turn sound: the user's own recording replaces the synthesized click; WAV embedded in the package (to ship as v0.2.1).
+25. CHANGELOG is edited by hand when needed (no release script).
+26. Phase 11 (after the solver): demo UI redesign with shadcn; light/dark/system theme; translucent expandable control panel docked left, right or bottom (default bottom); compact multi-column controls; HTML prototype before coding; layout designed to be reused by future package demos (confirmed).
 
 ## Pending Decisions
-1. Solver hook: what it should do, which algorithm and the bundle size cost (to discuss in the next phase).
-2. Sound stays off by default (the `sound` prop is opt-in), volume 0.5. Unconfirmed.
+1. Solver algorithm source: own TypeScript implementation (recommended, testable here, no dependency) or an existing library. Unconfirmed.
+2. Solver packaging: optional subpath export `@edmarkmagsalin/rubiks-cube/solver` (recommended), or a separate package. Unconfirmed.
+3. Solver responsiveness: chunked async first, Web Worker later (recommended), Worker now, or sync only. Unconfirmed.
+4. Solver API: `solve(state, options?)` returning moves, `solveAsync`, `invertMoves`, `isSolved`; the component stays solver-free. Unconfirmed.
+5. Sound stays off by default (the `sound` prop is opt-in), volume 0.5. Unconfirmed.
+6. Phase 11: shadcn defaults (style, base color) and which control sections the panel groups (moves, state, appearance, playback). To settle in the prototype review.
 
 ## Progress Log
 - Planning: plan drafted, decisions resolved
