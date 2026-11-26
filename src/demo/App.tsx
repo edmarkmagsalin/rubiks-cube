@@ -5,6 +5,7 @@ import { DEFAULT_COLORS, FACES, type FaceColors } from '../core/constants';
 import type { BackendKind } from '../core/webgpu';
 import { formatMove, formatMoves, randomScramble, type Move } from '../core/moves';
 import { SOLVED_STATE } from '../core/cubeState';
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const SAMPLE_LOGO =
   'data:image/svg+xml;utf8,' +
@@ -66,6 +67,7 @@ export function App() {
             {backend === 'webgpu' ? 'WebGPU' : 'WebGL2 (fallback)'}
           </span>
         )}
+        <ThemeToggle />
       </header>
 
       {backend === 'webgl2' && (
