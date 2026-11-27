@@ -140,27 +140,27 @@ Built with Vite.
 - [x] CHANGELOG fixed: it still had the sound entry under Unreleased and no 0.2.0 section; added `[0.2.1]` (recorded sample) and `[0.2.0]` (sound props), emptied Unreleased, updated the compare links
 - [ ] Release v0.2.1 (version bump, commit, push, tag) - needs your action
 
-### Phase 10 - Solver hook (discussion in progress)
-- [x] Options discussed: Kociemba two-phase (about 20 moves, needs lookup tables), beginner layer-by-layer (100+ moves, no tables), undo by reversing the move history (trivial, only for known histories), optimal search (not feasible in a browser)
-- [ ] Decide algorithm source, packaging, responsiveness and API shape (see Pending Decisions)
-- [ ] Build with tests (scramble, solve, replay the solution to reach the solved state; invalid states report the validation error)
-- [ ] Demo: a Solve button that solves from the current state and animates the result
-- [ ] Release (minor version, CHANGELOG entry)
+### Phase 10 - Solver hook (deferred: last, maybe never)
+The user decided the solver is not needed for the purpose of this project, so it is parked. If it is ever built, the decisions below apply.
+- [x] Options discussed: Kociemba two-phase (about 20 moves, needs lookup tables), beginner layer-by-layer (100+ moves, no tables), undo by reversing the move history, optimal search (not feasible in a browser)
+- [x] Decisions on record: implement both Kociemba and beginner layer-by-layer; own TypeScript implementation (no dependency); optional subpath export `@edmarkmagsalin/rubiks-cube/solver`; chunked async first, Web Worker later; API `solve(state, options?)`, `solveAsync`, `invertMoves`, `isSolved`, component stays solver-free
+- [ ] Build, tests and a demo Solve button (only if the time comes)
 
 ### Phase 11 - Demo UI/UX with shadcn (prototype first)
 Goal: a better demo page, built as a reusable demo shell that future package demos can share.
-- [ ] Step 1 - HTML prototype artifact (no repo code yet): layout, theme, dock, compact density; reviewed and approved before any coding
-- [ ] Step 2 - Install and configure shadcn/ui (Tailwind, path alias, components.json) without touching the library build
-- [ ] Step 3 - Build the reusable demo shell in `src/demo/shell/` (no imports from the cube package)
-- [ ] Step 4 - Move the current demo controls into the shell
+- [x] Step 1 - HTML prototype artifact: https://claude.ai/artifact/9JdbNxfiLFX6RNSDZvSmEo (file `demo-shell-prototype.html`). Reviewed by the user ("looks good") with three changes, now applied: collapsed panel shows only the expand button; theme toggle is one button (menu with Light / Dark / System); npm badge link in the top nav
+- [x] Step 2 - shadcn/ui set up by the user (committed): Tailwind v4 (`@tailwindcss/vite`), shadcn with Base UI primitives, Phosphor icons, JetBrains Mono font, `@/` path alias, `ThemeProvider` + `ThemeToggle`, no-flash theme script in `index.html`; library build untouched
+- [x] Step 3 - Reusable demo shell written in `src/demo/shell/` (no imports from the cube package): `DemoShell`, `ControlPanel`, `ControlSection`, `SliderField`, `SwitchField`, `ColorSwatches`, `NpmBadge`, `useDockLayout`
+- [x] Step 4 - Current demo controls moved into the shell (`src/demo/App.tsx`); old `src/demo/styles.css` is no longer imported and can be deleted
+- [ ] Verify Steps 3-4 in the browser: dock left / right / bottom, collapse to one button, theme, narrow screens, all controls still work; `pnpm lint`, `pnpm test`, `pnpm build` and `pnpm build:lib` pass - needs your confirmation
 - [ ] Step 5 - Document the shell (how to reuse it in another package), then verify
 
 Features:
-- Theme: light / dark / system (system follows the OS; choice remembered; no flash on load)
-- Control panel: translucent (backdrop blur), expandable and collapsible, dockable left, right or bottom; default is bottom; dock and open state remembered
+- Theme: light / dark / system through one toggle button (system follows the OS; choice remembered; no flash on load)
+- Control panel: translucent (backdrop blur), dockable left, right or bottom (default bottom), dock and open state remembered. Collapsed, it shows only one expand button
 - Compact controls: grouped sections in a multi-column grid; no long inputs or sliders (short fields, inline value labels, small swatches)
 - Narrow screens: the panel becomes a bottom sheet
-- Icons: Lucide (no emoji)
+- Icons: Phosphor in the app (the prototype uses inline Lucide-style SVG); no emoji
 
 Reuse plan:
 - The shell knows nothing about the cube: it provides slots for title/status badges, notices, the stage (children) and the control sections
@@ -171,7 +171,8 @@ Reuse plan:
 Constraints:
 - The library build and package contents stay unchanged: demo code and Tailwind never enter `src/index.ts`, `vite.config.lib.ts` or `tsconfig.lib.json`
 - `erasableSyntaxOnly`, oxlint and CI stay green
-- Prototype artifact: link will be added here when it is created
+- Prototype artifact: https://claude.ai/artifact/9JdbNxfiLFX6RNSDZvSmEo
+- The prototype uses the shadcn neutral theme tokens (background, foreground, muted, border, input, primary, ring, radius), so the real shadcn setup drops in with the same look
 
 ## Decisions (resolved)
 1. TypeScript
@@ -200,14 +201,11 @@ Constraints:
 24. Turn sound: the user's own recording replaces the synthesized click; WAV embedded in the package (to ship as v0.2.1).
 25. CHANGELOG is edited by hand when needed (no release script).
 26. Phase 11 (after the solver): demo UI redesign with shadcn; light/dark/system theme; translucent expandable control panel docked left, right or bottom (default bottom); compact multi-column controls; HTML prototype before coding; layout designed to be reused by future package demos (confirmed).
+27. v0.2.1 released. The solver is deferred (last, maybe never); the demo UI phase goes next, starting with the prototype.
+28. Prototype changes (confirmed): collapsed panel shows only the expand button; one theme toggle button; npm badge link in the top nav.
 
 ## Pending Decisions
-1. Solver algorithm source: own TypeScript implementation (recommended, testable here, no dependency) or an existing library. Unconfirmed.
-2. Solver packaging: optional subpath export `@edmarkmagsalin/rubiks-cube/solver` (recommended), or a separate package. Unconfirmed.
-3. Solver responsiveness: chunked async first, Web Worker later (recommended), Worker now, or sync only. Unconfirmed.
-4. Solver API: `solve(state, options?)` returning moves, `solveAsync`, `invertMoves`, `isSolved`; the component stays solver-free. Unconfirmed.
-5. Sound stays off by default (the `sound` prop is opt-in), volume 0.5. Unconfirmed.
-6. Phase 11: shadcn defaults (style, base color) and which control sections the panel groups (moves, state, appearance, playback). To settle in the prototype review.
+1. Phase 11: shadcn defaults (style, base color) and which control sections the panel groups (moves, state, appearance, playback). To settle in the prototype review.
 
 ## Progress Log
 - Planning: plan drafted, decisions resolved
@@ -230,3 +228,4 @@ Constraints:
 - Phase 9: `src/core/sound.ts` (Web Audio click), `sound` / `volume` props, demo toggle and slider. Verified locally by user.
 - Phase 9b: `sound.ts` now plays the recorded sample (`assets/turn.wav` embedded via `turnSoundData.ts`); prepare-on-switch-on, overlapping voices, limiter. Verified locally by user.
 - CHANGELOG: 0.2.0 and 0.2.1 sections added, Unreleased emptied (the v0.2.0 GitHub release notes fell back to "See CHANGELOG.md" because that section was missing).
+- Phase 11 port: demo shell in `src/demo/shell/` and `src/demo/App.tsx` rebuilt on shadcn (Button, Input, Slider, Switch) with Phosphor icons and the existing ThemeToggle. Not yet run in a browser.

@@ -1,11 +1,31 @@
 import { useMemo, useRef, useState } from 'react';
-import { Box, Cpu, Hand, Image as ImageIcon, Info, Palette, Pause, Play, RotateCcw, Shuffle, Upload, Volume2, VolumeX, X } from 'lucide-react';
+import {
+  ArrowCounterClockwise,
+  Copy,
+  Cpu,
+  Cube,
+  Hand,
+  Image as ImageIcon,
+  Info,
+  Palette,
+  Pause,
+  Play,
+  Shuffle,
+  SpeakerHigh,
+  UploadSimple,
+  X,
+} from '@phosphor-icons/react';
 import { RubiksCube, type LogoOptions, type RubiksCubeHandle } from '../RubiksCube';
 import { DEFAULT_COLORS, FACES, type FaceColors } from '../core/constants';
 import type { BackendKind } from '../core/webgpu';
 import { formatMove, formatMoves, randomScramble, type Move } from '../core/moves';
 import { SOLVED_STATE } from '../core/cubeState';
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeToggle } from '@/components/theme-toggle';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ColorSwatches, ControlSection, DemoShell, NpmBadge, SliderField, SwitchField } from './shell';
+
+const PACKAGE_NAME = '@edmarkmagsalin/rubiks-cube';
 
 const SAMPLE_LOGO =
   'data:image/svg+xml;utf8,' +
@@ -17,6 +37,7 @@ const SAMPLE_LOGO =
 
 export function App() {
   const cubeRef = useRef<RubiksCubeHandle>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [backend, setBackend] = useState<BackendKind | null>(null);
   const [duration, setDuration] = useState(300);
   const [sequence, setSequence] = useState("R U R' U' F2");
@@ -56,165 +77,185 @@ export function App() {
   const onMoveEnd = (move: Move, source: 'api' | 'user') =>
     setLastMove(`${formatMove(move)} (${source === 'user' ? 'dragged' : 'played'})`);
 
-  return (
-    <div className="app">
-      <header className="app-header">
-        <Box size={20} />
-        <h1>Rubik's Cube</h1>
-        {backend && (
-          <span className="badge">
-            <Cpu size={14} />
-            {backend === 'webgpu' ? 'WebGPU' : 'WebGL2 (fallback)'}
-          </span>
-        )}
-        <ThemeToggle />
-      </header>
+  const notice =
+    backend === 'webgl2' ? (
+      <div role="status" className="flex shrink-0 items-start gap-2 bg-muted px-3 py-2 text-xs text-muted-foreground">
+        <Info size={16} className="mt-px shrink-0" />
+        <span>
+          WebGPU is not available in this browser, so the WebGL2 fallback is in use. Rendering still works, but WebGPU is
+          recommended for best performance.
+        </span>
+      </div>
+    ) : undefined;
 
-      {backend === 'webgl2' && (
-        <div className="notice" role="status">
-          <Info size={16} />
-          <span>
-            WebGPU is not available in this browser, so the WebGL2 fallback is in use.
-            Rendering still works, but WebGPU is recommended for best performance.
-          </span>
-        </div>
-      )}
-
-      <main className="stage">
-        <RubiksCube
-          ref={cubeRef}
-          colors={colors}
-          logo={logo}
-          state={initial.state}
-          moves={initial.moves}
-          moveDuration={duration}
-          sound={soundOn}
-          volume={volume}
-          onBackendReady={setBackend}
-          onMoveEnd={onMoveEnd}
-          onStateChange={setCurrentState}
-          onError={(e) => setError(e.message)}
-        />
-        <p className="hint">
-          <Hand size={14} />
-          Drag background to rotate, drag the cube to turn a layer
-        </p>
-      </main>
-
-      <section className="controls">
-        <div className="row">
-          <input
+  const panel = (
+    <>
+      <ControlSection title="Moves" icon={<Play size={14} />}>
+        <div className="flex gap-1.5">
+          <Input
+            className="h-8 min-w-0 flex-1 font-mono text-xs"
             value={sequence}
             onChange={(e) => setSequence(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && guard(() => cubeRef.current?.applyMoves(sequence))}
             placeholder="R U R' U' F2 M x"
             aria-label="Move sequence"
           />
-          <button className="primary" onClick={() => guard(() => cubeRef.current?.applyMoves(sequence))}>
-            <Play size={14} /> Play
-          </button>
-          <button onClick={() => guard(() => cubeRef.current?.applyMoves(formatMoves(randomScramble(20))))}>
-            <Shuffle size={14} /> Scramble
-          </button>
-        </div>
-
-        <div className="row">
-          <input
-            className="mono"
-            value={stateInput}
-            onChange={(e) => setStateInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && guard(() => cubeRef.current?.setState(stateInput))}
-            placeholder="54-letter state (U R F D L B order), e.g. paste the current state"
-            aria-label="Cube state"
-          />
-          <button onClick={() => guard(() => cubeRef.current?.setState(stateInput))}>
-            <Upload size={14} /> Set state
-          </button>
-          <button
-            onClick={() => {
-              setError(null);
-              cubeRef.current?.reset();
-              setCurrentState(SOLVED_STATE);
-            }}
+          <Button size="icon" className="size-8" title="Play" aria-label="Play" onClick={() => guard(() => cubeRef.current?.applyMoves(sequence))}>
+            <Play size={14} weight="fill" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="size-8"
+            title="Scramble"
+            aria-label="Scramble"
+            onClick={() => guard(() => cubeRef.current?.applyMoves(formatMoves(randomScramble(20))))}
           >
-            <RotateCcw size={14} /> Reset
-          </button>
-          <button
+            <Shuffle size={14} />
+          </Button>
+          <Button
+            variant={paused ? 'secondary' : 'outline'}
+            size="icon"
+            className="size-8"
+            title={paused ? 'Resume' : 'Pause'}
+            aria-label={paused ? 'Resume' : 'Pause'}
+            aria-pressed={paused}
             onClick={() => {
               if (paused) cubeRef.current?.resume();
               else cubeRef.current?.pause();
               setPaused(!paused);
             }}
           >
-            {paused ? <Play size={14} /> : <Pause size={14} />} {paused ? 'Resume' : 'Pause'}
-          </button>
+            {paused ? <Play size={14} /> : <Pause size={14} />}
+          </Button>
         </div>
+        <p className="text-xs text-muted-foreground">
+          Last move: <strong className="font-medium text-foreground">{lastMove ?? 'none yet'}</strong>
+        </p>
+        <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+          <Hand size={14} className="mt-px shrink-0" />
+          <span>
+            Drag the background to rotate, drag the cube to turn a layer. Shift / Ctrl / Cmd + drag, or two fingers, turns the whole cube.
+          </span>
+        </p>
+        {error && <p className="text-xs text-destructive">{error}</p>}
+      </ControlSection>
 
-        <div className="row wrap">
-          <Palette size={14} />
-          {FACES.map((f) => (
-            <label key={f} className="swatch" title={`${f} face color`}>
-              {f}
-              <input type="color" value={colors[f]} onChange={(e) => setColors({ ...colors, [f]: e.target.value })} />
-            </label>
-          ))}
-          <button onClick={() => setColors({ ...DEFAULT_COLORS })}>
-            <RotateCcw size={14} /> Default colors
-          </button>
+      <ControlSection title="State" icon={<UploadSimple size={14} />}>
+        <Input
+          className="h-8 font-mono text-xs"
+          value={stateInput}
+          onChange={(e) => setStateInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && guard(() => cubeRef.current?.setState(stateInput))}
+          placeholder="54 letters, U R F D L B order"
+          aria-label="Cube state"
+        />
+        <div className="grid grid-cols-3 gap-1.5">
+          <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => guard(() => cubeRef.current?.setState(stateInput))}>
+            <UploadSimple size={14} /> Set
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 text-xs"
+            onClick={() => {
+              setError(null);
+              cubeRef.current?.reset();
+              setCurrentState(SOLVED_STATE);
+            }}
+          >
+            <ArrowCounterClockwise size={14} /> Reset
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 text-xs"
+            onClick={() => guard(() => navigator.clipboard.writeText(currentState))}
+          >
+            <Copy size={14} /> Copy
+          </Button>
         </div>
+        <p className="truncate font-mono text-[11px] text-muted-foreground" title={currentState}>
+          {currentState}
+        </p>
+      </ControlSection>
 
-        <div className="row wrap">
-          <ImageIcon size={14} />
-          <label className="button">
-            <Upload size={14} /> Logo
-            <input type="file" accept="image/*" hidden onChange={(e) => pickLogo(e.target.files?.[0])} />
-          </label>
-          <button onClick={() => setLogoSrc(SAMPLE_LOGO)}>Sample logo</button>
-          <button disabled={!logoSrc} onClick={() => setLogoSrc(null)}>
+      <ControlSection title="Appearance" icon={<Palette size={14} />}>
+        <ColorSwatches
+          items={FACES.map((f) => ({ key: f, label: f, value: colors[f] }))}
+          onChange={(key, value) => setColors({ ...colors, [key]: value })}
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            title="Default colors"
+            aria-label="Default colors"
+            onClick={() => setColors({ ...DEFAULT_COLORS })}
+          >
+            <ArrowCounterClockwise size={14} />
+          </Button>
+        </ColorSwatches>
+        <div className="grid grid-cols-3 gap-1.5">
+          <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => fileRef.current?.click()}>
+            <ImageIcon size={14} /> Logo
+          </Button>
+          <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setLogoSrc(SAMPLE_LOGO)}>
+            Sample
+          </Button>
+          <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" disabled={!logoSrc} onClick={() => setLogoSrc(null)}>
             <X size={14} /> Remove
-          </button>
-          <label className="row">
-            <span>Size {Math.round(logoScale * 100)}%</span>
-            <input type="range" min={0.2} max={1} step={0.05} value={logoScale} onChange={(e) => setLogoScale(Number(e.target.value))} />
-          </label>
-          <label className="row">
-            <span>Rotate {logoRotation} deg</span>
-            <input type="range" min={0} max={359} step={1} value={logoRotation} onChange={(e) => setLogoRotation(Number(e.target.value))} />
-          </label>
+          </Button>
         </div>
-
-        <div className="row">
-          <button aria-pressed={soundOn} onClick={() => setSoundOn(!soundOn)}>
-            {soundOn ? <Volume2 size={14} /> : <VolumeX size={14} />} Sound {soundOn ? 'on' : 'off'}
-          </button>
-          <label className="row">
-            <span>Volume {Math.round(volume * 100)}%</span>
-            <input type="range" min={0} max={1} step={0.05} value={volume} disabled={!soundOn} onChange={(e) => setVolume(Number(e.target.value))} />
-          </label>
+        <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => pickLogo(e.target.files?.[0])} />
+        <div className="grid grid-cols-2 gap-3">
+          <SliderField label="Size" value={logoScale} min={0.2} max={1} step={0.05} format={(v) => `${Math.round(v * 100)}%`} onChange={setLogoScale} />
+          <SliderField label="Rotate" value={logoRotation} min={0} max={359} step={1} format={(v) => `${v}\u00b0`} onChange={setLogoRotation} />
         </div>
+      </ControlSection>
 
-        <label className="row">
-          <span>Speed: {duration} ms per move</span>
-          <input
-            type="range"
-            min={80}
-            max={1000}
-            step={10}
-            value={duration}
-            onChange={(e) => setDuration(Number(e.target.value))}
-          />
-        </label>
+      <ControlSection title="Playback" icon={<SpeakerHigh size={14} />}>
+        <SliderField label="Speed" value={duration} min={80} max={1000} step={10} format={(v) => `${v} ms`} onChange={setDuration} />
+        <SwitchField label="Sound" checked={soundOn} onChange={setSoundOn} />
+        <SliderField label="Volume" value={volume} min={0} max={1} step={0.05} disabled={!soundOn} format={(v) => `${Math.round(v * 100)}%`} onChange={setVolume} />
+      </ControlSection>
+    </>
+  );
 
-        <p className="muted">
-          Whole-cube turn: hold Shift / Ctrl / Cmd and drag, or drag with two fingers.
-          {lastMove && <> Last move: <strong>{lastMove}</strong></>}
-        </p>
-        <p className="muted mono" title="State after the last finished move">
-          State: {currentState}
-        </p>
-
-        {error && <p className="error">{error}</p>}
-      </section>
-    </div>
+  return (
+    <DemoShell
+      title="Rubik’s Cube"
+      icon={<Cube size={20} />}
+      storageKey="demo-shell:rubiks-cube"
+      headerStart={
+        <>
+          <NpmBadge name={PACKAGE_NAME} />
+          {backend && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground">
+              <Cpu size={14} />
+              {backend === 'webgpu' ? 'WebGPU' : 'WebGL2 (fallback)'}
+            </span>
+          )}
+        </>
+      }
+      headerEnd={<ThemeToggle />}
+      notice={notice}
+      panel={panel}
+    >
+      <RubiksCube
+        ref={cubeRef}
+        colors={colors}
+        logo={logo}
+        state={initial.state}
+        moves={initial.moves}
+        moveDuration={duration}
+        sound={soundOn}
+        volume={volume}
+        onBackendReady={setBackend}
+        onMoveEnd={onMoveEnd}
+        onStateChange={setCurrentState}
+        onError={(e) => setError(e.message)}
+      />
+    </DemoShell>
   );
 }
