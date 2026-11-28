@@ -93,7 +93,7 @@ export function App() {
       <ControlSection title="Moves" icon={<Play size={14} />}>
         <div className="flex gap-1.5">
           <Input
-            className="h-8 min-w-0 flex-1 font-mono text-xs"
+            className="h-8 min-w-0 flex-1 font-mono text-base md:text-xs pointer-coarse:text-base"
             value={sequence}
             onChange={(e) => setSequence(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && guard(() => cubeRef.current?.applyMoves(sequence))}
@@ -143,7 +143,7 @@ export function App() {
 
       <ControlSection title="State" icon={<UploadSimple size={14} />}>
         <Input
-          className="h-8 font-mono text-xs"
+          className="h-8 font-mono text-base md:text-xs pointer-coarse:text-base"
           value={stateInput}
           onChange={(e) => setStateInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && guard(() => cubeRef.current?.setState(stateInput))}
